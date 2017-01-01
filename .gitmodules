@@ -1,0 +1,6 @@
+[submodule "bnr-conf"]
+	path = bnr-conf
+	url = git@github.com:wrvenkat/bnr-conf.git
+[submodule "config_scripts"]
+	path = config_scripts
+	url = git@github.com:wrvenkat/config_scripts.git
