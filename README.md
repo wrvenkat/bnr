@@ -4,8 +4,8 @@ bnr is a shell script tool to create and restore backups of the dotfiles based o
 ## Getting Started
 There are many dotfiles management softwares out there. This is just another. The following describes what the tool is about and what it does.  
   
-The bnr script reads config information from a [config file](https://github.com/wrvenkat/bnr-conf) and restores or creates backup. The bnr script processes each line entry in the config file and,  
-1. Restores a backup by copying files from the dotfiles directory to their destination as specified in the config file.  
+The bnr script reads config information from a [config file](https://github.com/wrvenkat/bnr-conf) and restores or creates backup. The bnr script processes each line entry in the config file and,
+1. Restores a backup by copying files from the dotfiles directory to their destination as specified in the config file.
 2. Creates a backup for each entry by copying files from their source destination to the dotfiles directory.  
 The bnr script can also take an optional install log file which is a file that is generated as part of running the install script of the [ibnr](https://github.com/wrvenkat/ibnr) tool. If this is specified, the bnr script will only process those entries for which the [actual program name](https://github.com/wrvenkat/ibnr-conf#format) value matches as that of the first column value in the [bnr-conf]() file.
 
