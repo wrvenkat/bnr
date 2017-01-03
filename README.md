@@ -22,7 +22,7 @@ The bnr script can also take an optional install log file which is a file that i
 `--all`&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`- process all entries in the configfile. If this is the case, the install log file is ignored.`  
 `--configfile=<config-file-path>`&nbsp;`- optionally provide the config file path for this script. By default, the script looks for the file bnr_list.conf`  
 `--list`&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`- display the contents of the install log file and config file.`  
-`--restore`&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`- restore the dotfiles and configuration for programs found in the config file (either the default file or the one provided to --configfile).by copying it to the directory of the source file.`  
+`--restore`&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`- restore the dotfiles and configuration for programs found in the config file (either the default file or the one provided to --configfile).by copying it to the directory of the source file.`  
 `--backup`&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`- create a backup by copying the dotfiles and running the script for the entries found in the config file (either the default file or the one provided to --configfile) from their destination to the dotfiles directory.`  
 `--mirror`&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`- this option when specified during a backup, mirrors the directory structure of the source dotfile.`
 
