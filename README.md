@@ -4,17 +4,18 @@ bnr is a shell script tool to create and restore backups of the dotfiles based o
 ## Getting Started
 There are many dotfiles management softwares out there. This is just another. The following describes what the tool is about and what it does.  
   
-The bnr script is customizable and reads config information from a [config file](https://github.com/wrvenkat/bnr-conf) and restores or creates backup. While most backups and restores are handled by their dotfiles, bnr script can also run additional scripts that need to be run for creating and/or restoring the backup. The bnr script processes each line entry in the config file and,
+The bnr script is customizable and reads config information from a [config file](https://github.com/wrvenkat/bnr-conf) and restores or creates backup. While most backups and restores are handled by their dotfiles, bnr script can also run additional scripts that need to be run for creating and/or restoring the backup. The bnr script processes each line entry in the config file and,  
 1. Restores a backup by copying files from the dotfiles directory to their destination as specified in the config file.
 2. Creates a backup for each entry by copying files from their source destination to the dotfiles directory.  
-The bnr script can also take an optional install log file which is a file that is generated as part of running the install script of the [ibnr](https://github.com/wrvenkat/ibnr) tool. If this is specified, the bnr script will only process those entries for which the [actual program name](https://github.com/wrvenkat/ibnr-conf#format) value matches as that of the first column value in the [bnr-conf]() file.
+The bnr script can also take an optional install log file which is a file that is generated as part of running the install script of the [ibnr](https://github.com/wrvenkat/ibnr) tool. If this is specified, the bnr script will only process those entries for which the [actual program name](https://github.com/wrvenkat/ibnr-conf#format) value matches as that of the first column value in the [bnr-conf]() file.  
+Any line whose program name has `$def$` as the first name in a value that is of the format `val-val` is processed regardless of whether an entry is present in the install log file or not.
 
 ## Usage
   
 `This script creates and restores backup based on a config file. The script parses the config file and processes each line entry. Output includes a log file which outputs failed backups or restorations.`  
 
 `Running`  
-`/bnr <arguments>`  
+`./bnr <arguments>`  
 
 `Arguments`  
 `-h | --help`&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`- display this message and quit.`  
