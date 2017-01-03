@@ -15,7 +15,7 @@ Any line whose program name has `$def$` as the first name in a value that is of 
 
 ## Usage
   
-`This script creates and restores backup based on a config file. The script parses the config file and processes each line entry. Output includes a log file which outputs failed backups or restorations.`  
+`This script creates and restores backup based on a config file. The script parses the config file and processes each line entry. Output includes an error.log file which outputs failed backups or restorations. A successful_bnr_lsit.conf and failed_bnr_lsit.conf corresponding to successful and failed entries.`  
 
 `Running`  
 `./bnr <arguments>`  
