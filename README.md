@@ -48,9 +48,9 @@ Any line whose program name has `$def$` as the first name in a value that is of 
   `cd ..; ./bnr --list --restore --installlog=../successfull_ppa_list.conf`  
   Restore backup from the provided directory instead of the default one,  
   `cd ..; ./bnr --list --restore --backupdir=~/dotfiles/`  
-  Create a backup mirroring the dotfiles' source path inside the default config files directory,
+  Create a backup mirroring the dotfiles' source path inside the default config files directory,  
   `./bnr --list --backup --mirror`  
-  Create a backup inside the provided config files directory,
+  Create a backup inside the provided config files directory,  
   `./bnr --list --backup --backupdir=~/dotfiles/`  
 
 ## Contributing
