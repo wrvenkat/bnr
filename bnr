@@ -6,7 +6,7 @@
 #6 - DONE - provide failed and successful logging capabilities
 #2 - DONE - Write the logic to perform a safe expansion of the target path.
 #4 - DONE - Write restore_backup
-#5 - TODO - write individual scripts to copy/restore the dot files
+#5 - DONE - write individual scripts to copy/restore the dot files
 #1 - DONE - Use the strict_read.sh to parse the input files.
 #2 - DONE - write a binary search to go through the config_array for each item in ppa_soft_array
 #3 - DONE - write the code for execution for -all
