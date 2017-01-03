@@ -9,9 +9,11 @@ The bnr script is customizable and reads config information from a [config file]
 1. Restores a backup by copying files from the dotfiles directory to their destination as specified in the config file.
 2. Creates a backup for each entry by copying files from their source destination to the dotfiles directory.  
 
-The bnr script can also take an optional install log file which is a file that is generated as part of running the install script of the [ibnr](https://github.com/wrvenkat/ibnr) tool. If this is specified, the bnr script will only process those entries for which the [actual program name](https://github.com/wrvenkat/ibnr-conf#format) value matches as that of the first column value in the [bnr-conf]() file.  
+The bnr script can also take an optional install log file which is a file that is generated as part of running the install script of the [ibnr](https://github.com/wrvenkat/ibnr) tool. If this is specified, the bnr script will only process those entries for which the [actual program name](https://github.com/wrvenkat/ibnr-conf#format) value matches as that of the first column value in the [bnr-conf]() file. It can be regarded as the first column in bnr-conf having a "forerign key" relationship with the second column in the ibn-conf file.  
 
 Any line whose program name has `$def$` as the first name in a value that is of the format `val-val` is processed regardless of whether an entry is present in the install log file or not.
+
+Please see [bnr-conf](https://github.com/wrvenkat/bnr-conf) for more information on the config file.
 
 ## Usage
   
