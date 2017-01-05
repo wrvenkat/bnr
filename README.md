@@ -13,6 +13,12 @@ The bnr script can also take an optional install log file which is a file that i
 
 Any line whose program name has `$def$` as the first name in a value that is of the format `$def$-val` is processed regardless of whether an entry is present in the install log file or not.
 
+The script logs entries for which the source file was not found in either a backup or restore into failed_bnr_list.conf file. Failure to perform the required operation also results in an entry in the failed_bnr_list.conf file.
+
+Sucessful entries are logged into the successful_bnr_list.conf file.
+
+An error.log is created inside the bnr directory that has the output from all failed operations.
+
 Please see [bnr-conf](https://github.com/wrvenkat/bnr-conf) for more information on the config file.
 
 ## Usage
