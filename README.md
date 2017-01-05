@@ -5,6 +5,7 @@ bnr is a shell script tool to create and restore backups of the dotfiles based o
 * There are many dotfiles management softwares out there. This is just another. The following describes what the tool is about and what it does.  
   
 * The bnr script is customizable and reads config information from a [config file](https://github.com/wrvenkat/bnr-conf) and restores or creates backup. While most backups and restores are handled by copying their dotfiles, bnr can also run additional scripts that are needed for creating and/or restoring backups. For example, to restore config information for a software that uses dconf, merely copying the user file, while being enough will copy the entire dconf database and not the one particular for the software.  
+  
   The bnr script processes each line entry in the config file and,  
 
 	1. Restores a backup by copying files from the dotfiles directory to their destination as specified in the config file. (or) run the corresponding script.
