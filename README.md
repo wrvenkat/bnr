@@ -25,7 +25,7 @@ Please see [bnr-conf](https://github.com/wrvenkat/bnr-conf) for more information
 
 ## Usage
   
-`This script creates and restores backup based on a config file. The script parses the config file and processes each line entry. Output includes an error.log file which outputs failed backups or restorations. A successful_bnr_lsit.conf and failed_bnr_lsit.conf corresponding to successful and failed entries.`  
+`This script creates and restores backup based on a config file. The script parses the config file and processes each line entry. Output includes an error.log file which outputs failed backups or restorations. A successful_bnr_list.conf and failed_bnr_list.conf corresponding to successful and failed entries.`  
 
 `Running`  
 `./bnr <arguments>`  
