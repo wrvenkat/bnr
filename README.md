@@ -60,15 +60,15 @@ Please see [bnr-conf](https://github.com/wrvenkat/bnr-conf) for more information
   `cd config_scripts; git checkout <your_ubuntu_version>`  
   Example: `cd config_scripts; git checkout 16.04`
   4. Navigate back to the project dir and run the tool to list the config file, add the PPAs and install the software:  
-  Restore backup for all entries,  
+  To restore backup for all entries,  
   `cd ..; ./bnr --list --all --restore`  
-  Restore backup for entries in a ibnr-conf type file,  
+  To restore backup for entries in a ibnr-conf type file,  
   `cd ..; ./bnr --list --restore --installlog=../successfull_ppa_list.conf`  
-  Restore backup from the provided directory instead of the default one,  
+  To restore backup from the provided directory instead of the default one,  
   `cd ..; ./bnr --list --restore --backupdir=~/dotfiles/`  
-  Create a backup mirroring the dotfiles' source path inside the default config files directory,  
+  To create a backup mirroring the dotfiles' source path inside the default config files directory,  
   `./bnr --list --backup --mirror`  
-  Create a backup inside the provided config files directory,  
+  To create a backup inside the provided config files directory,  
   `./bnr --list --backup --backupdir=~/dotfiles/`  
 
 ## Contributing
