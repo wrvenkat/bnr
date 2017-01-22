@@ -18,10 +18,12 @@ RESTORE_FLG=0
 DBG_FLG=1
 LOG_ERROR_FLG=1
 ALL_FLG=0
+MIRROR_FLG=0
 
 #files and directories
 INSTALL_LOG_FILE=installed_ppa.conf
-BACKUP_DIR="configfiles"
+DEFAULT_BACKUP_DIR="configfiles"
+BACKUP_DIR=
 BACKUP_SCRIPTS_DIR="config scripts"
 CONFIG_FILE=bnr_list.conf
 ERROR_LOG_FILE=backup.log
@@ -298,12 +300,13 @@ call_script(){
 
     msg=$(printf "Calling \"bash %s %s %s\"\n" "$script_path" "$backup_file_name" "$4")
     log_error 0 "$msg"
-    result=$(bash "$script_path" "$backup_file_name" "$4" 2>&1)
-    if [ $? -ne 0 ]; then
-	msg=$(printf "Script failed with error \n%s\n" "$result")
-	log_error 1 "$msg"
-    fi
-    return $?
+    #result=$(bash "$script_path" "$backup_file_name" "$4" 2>&1)
+    #if [ $? -ne 0 ]; then
+    #	msg=$(printf "Script failed with error \n%s\n" "$result")
+    #	log_error 1 "$msg"
+    #fi
+    #return $?
+    return 0
 }
 
 #restores backup of all software that are listed in the config2.txt and successfully installed.
@@ -505,15 +508,16 @@ restore_backup(){
 #if the directory is already present and similar files present in this directory, they're
 #overwritten otherwise a new directory is created and files copied
 create_backup(){
-    local create_dir_flg=1
     local soft=
     local backup_file_name=
+    local mirror_backup_dir=
+    local tilde_expanded=0
     local props=
     local src_file_name=
     local msg=
     local index=
     local result=
-    local retVal=
+    local retVal=   
         
     for index in ${!config_array[@]}; do
 	result=
@@ -526,34 +530,105 @@ create_backup(){
 	props="$column3_value_cprops"
 	src_file_name="$column4_value_cconfig_filename"
 
-	#check the backup file exists in the backup folder
-	if [ $create_dir_flg -eq 1 ]; then
-	    if [ -d "$BACKUP_DIR" ]; then
-		create_dir_flg=0
-	    else
-		local result=
-		local retVal=
-		result=$(mkdir "$BACKUP_DIR" 2>&1)
-		retVal=$?
-		if [ "$retVal" -eq 0 ]; then
-		    create_dir_flg=0
-		else
-		    msg=$(printf "Unable to create directory with the following error.\n%s" "$result")
-		    log_error 1 "$msg"
-		    return 1
-		fi
+	#check the backup dir exists and if not, create it
+	if ! [ -d "$BACKUP_DIR" ]; then
+	    local result=
+	    local retVal=
+	    result=$(mkdir "$BACKUP_DIR" 2>&1)
+	    if [ "$?" -ne 0 ]; then
+		msg=$(printf "Unable to create directory with the following error.\n%s" "$result")
+		log_error 1 "$msg"
+		return 1
 	    fi
 	fi
 
-	#get the absolute path of backup file
+	#get the absolute path of backup file depending on whether mirror is set or not
+	if [ "$MIRROR_FLG" -eq 1 ] && [ "$src_File_name" != '!' ]; then
+	    local parsed_file_path="$src_file_name"
+	    local file_path_tilde_prefix=
+	    local expanded_file_path_tilde_prefix=
+	    local parsed_expanded_file_path=
+	    local expanded_part=
+	    local result=
+	    #quoting parse the source file path
+	    if result=$(bash_quoting_parse "$orig_file_path"); then
+		parsed_file_path="$quoting_parsed_string"
+	    else
+		msg=$(printf "bash_quoting_parse failed with error:%s" "$result")
+		log_error 1 "$msg"
+		exit 1
+	    fi
+	    #safely expand file path
+	    if result=$(../bash_helper_scripts.safe_tilde_expansion.sh\
+					"$src_file_name" 1); then
+		tilde_expanded=1
+		#get the prefix, the expanded prefix and the expanded file path
+		local str=
+		local index=1
+		while read str; do
+		    if [ "$index" -eq 1 ]; then
+			file_path_tilde_prefix="$str"
+		    elif [ "$index" -eq 2 ]; then
+			expanded_file_path_tilde_prefix="$str"
+		    elif [ "$index" -eq 3 ]; then
+			parsed_expanded_file_path="$str"
+		    fi
+		    ((index+=1))
+		done < <(echo "$result")
+		#get the canonicalized path
+		parsed_file_path=$(val1=$(dirname "$parsed_file_path"); cd -P "$val1"; pwd)
+		#remove any expanded prefix
+		parsed_file_path=${parsed_file_path#"$expanded_file_path_tilde_prefix"}
+		#remove the first /
+		parsed_file_path=${parsed_file_path#?}
+		backup_file_name="$parsed_file_path"
+	    else
+		src_file_name="$parsed_file_path"
+	    fi
+	fi
 	backup_file_name="$(cd "$BACKUP_DIR"; echo "$(pwd)/$backup_file_name")"
-	#we need to do the below since tilde expansion doesn't happen in [ conditions
-	#DONE: This is not the acceptable way to do this! Change it!
-	#(eval echo "$src_file_name")
+	printf "Backup_File_Name is %s\n" "$backup_file_name"
+	
+	#quoting parse the source file path
+	if result=$(bash_quoting_parse "$orig_file_path"); then
+	    parsed_file_path="$quoting_parsed_string"
+	else
+	    msg=$(printf "bash_quoting_parse failed with error:%s" "$result")
+	    log_error 1 "$msg"
+	    exit 1
+	fi
+	if [ "$src_file_name" != '!' ]; then
+	    #safely expand file path
+	    if ! src_file_name=$(../bash_helper_scripts.safe_tilde_expansion.sh\
+				     "$src_file_name" 1); then
+		msg=$(printf "bash_quoting_parse failed with error:%s" "$src_file_name")
+		log_error 1 "$msg"
+		exit 1
+	    fi
+	    #get canonicalized path
+	    local actual_filename=$(dirname "$src_file_name")
+	    actual_filename=${src_file_name#"$actual_filename"}
+	    local src_file_dir=$(val1=$(dirname "$src_file_name"); cd -P "$val1"; pwd)
+	    src_file_name="$src_file_dir""$actual_filename"
+	fi
+	
+	printf "SRCFILENAME is %s\n" "$src_file_name"
+	if [ "$src_file_name" != "!" ] && ! [ -a "$src_file_name" ]; then
+	    msg=$(printf "Source file \"%s\" for %s not found." "$src_file_name" "$soft")
+	    log_error 0 "$msg"
+	    continue		
+	fi
+
+	#create backup dir for current entry
+	if [ "$MIRROR_FLG" -eq 1 ]; then
+	    local dirval=$(dirname "$backup_file_name")
+	    msg=$(printf "Creating backup directory \"%s\" ..." "%dirval")
+	    log_error 0 "$msg"	    
+	fi
 	
 	msg=$(printf "Backing up %s... " "$soft")
 	log_error 0 "$msg"
-
+	
 	get_config_props_values "$props"
 	#if it requires a special script for creating a backup
 	if [ "$props2_value_cscript" -eq 1 ]; then
@@ -570,24 +645,13 @@ create_backup(){
 	    continue
 	fi	
 
-	#printf "SRCFILENAME is %s\n" "$src_file_name"
-	if safe_expand_file_path "$src_file_name"; then
-	    src_file_name="$safe_file_path"	
-	else
-	    exit 1
-	fi
-	if [ "$src_file_name" != "!" ] && ! [ -a "$src_file_name" ]; then
-	    msg=$(printf "Source file \"%s\" for %s not found." "$src_file_name" "$soft")
-	    log_error 0 "$msg"
-	    continue
-	fi
-
 	#TODO: There could potential issues here when the filepath used has unescaped characters
 	#that wreak havoc when used in a command-line context. Tests needed.
 	msg=$(printf "Executing \"cp %s %s\"... " "$src_file_name" "$backup_file_name")
 	log_error 0 "$msg"
-	result=$(cp "$src_file_name" "$backup_file_name" 2>&1)
-	retVal=$?
+	#result=$(cp "$src_file_name" "$backup_file_name" 2>&1)
+	#retVal=$?
+	retVal=0
 	if [ "$retVal" -ne 0 ]; then
 	    msg=$(printf "Error copying \"%s\" to \"%s\"." "$src_file_name" "$backup_file_name")
 	    log_error 1 "$msg"
@@ -909,6 +973,14 @@ parse_config_file(){
 		#which is the line number and status
 		#printf "MSG: Unparsed line is %s\n" "$strict_unparsed_line"
 		for index in "${!strict_line[@]}"; do
+		    local val="${strict_line[$index]}"
+		    if result=$(bash_quoting_parse "$val"); then
+			:
+		    else
+			msg=$(printf "bash_quoting_parse failed with error:%s" "$result")
+			log_error 1 "$msg"
+			exit 1
+		    fi
 		    if [ "$index" -eq 0 ]; then
 			msg+=$(printf "%s" "${strict_line[$index]}")
 		    elif [ "$index" -eq 1 ] || [ "$index" -eq 3 ]; then
@@ -961,6 +1033,8 @@ main() {
     source "../helper scripts/strict_read.sh"
     #source in the safe_expand_file_path file for use later
     source "../helper scripts/safe-tilde-expansion.sh"
+    #source in bash_quoting_parsing
+    source "../helper scripts/bash_quoting_parsing.sh"
     
     #parse the file(s)
     if [ "$ALL_FLG" -ne 1 ]; then
@@ -1067,6 +1141,8 @@ parse_args(){
 	    --all) ALL_FLG=1; shift; valid_args=1;;	    
 	    --configfile) config_file=$2; shift 2; valid_args=1;;
 	    --installlog) install_log_file=$2; shift 2; valid_args=1;;
+	    --mirror) MIRROR_FLG=1; shift 1; valid_args=1;;
+	    --backupdir) BACKUP_DIR="$2"; shift 2; valid_args=1;;
 	    --) shift ;;
 	    *) printf "Invalid arguments received. Use -h or --help to see usage.\n"; exit 0;;
 	esac
@@ -1090,6 +1166,14 @@ parse_args(){
 	temp="${temp%\'}"
         install_log_file="$temp"
 	INSTALL_LOG_FILE="$install_log_file"
+    fi
+
+    if [ -n "$BACKUP_DIR" ]; then
+	temp="${BACKUP_DIR#\'}"
+	temp="${temp%\'}"
+        BACKUP_DIR="$temp"
+    else
+	BACKUP_DIR="$DEFAULT_BACKUP_DIR"
     fi
 }
 
