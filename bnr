@@ -25,7 +25,7 @@ INSTALL_LOG_FILE=installed_ppa.conf
 DEFAULT_BACKUP_DIR="configfiles"
 BACKUP_DIR=
 BACKUP_SCRIPTS_DIR="config scripts"
-CONFIG_FILE=bnr_list.conf
+CONFIG_FILE=bnr-conf/bnr_list.conf
 ERROR_LOG_FILE=backup.log
 SUCCESS_LOG_FILE=bnr_success_list.conf
 FAILED_LOG_FILE=bnr_failed_list.conf
@@ -39,7 +39,7 @@ config_array_count=0
 SEARCH_INDEX_1=
 SEARCH_INDEX_2=
 
-if ! source "../helper scripts/logger.sh"; then
+if ! source "../bash_helper_scripts/logger.sh"; then
     printf "Failed to load logger. Exiting\n"
     exit 1
 fi
@@ -973,7 +973,7 @@ parse_config_file(){
 		#which is the line number and status
 		#printf "MSG: Unparsed line is %s\n" "$strict_unparsed_line"
 		for index in "${!strict_line[@]}"; do
-		    local val="${strict_line[$index]}"
+		    local val="${strict_line[$index]}"		    
 		    if result=$(bash_quoting_parse "$val"); then
 			:
 		    else
@@ -984,7 +984,7 @@ parse_config_file(){
 		    if [ "$index" -eq 0 ]; then
 			msg+=$(printf "%s" "${strict_line[$index]}")
 		    elif [ "$index" -eq 1 ] || [ "$index" -eq 3 ]; then
-			msg+=$(printf " \"%s\"" "${strict_line[$index]}")
+			msg+=$(printf " %s" "${strict_line[$index]}")
 			if [ "$index" -eq 3 ]; then
 			    msg+=$(printf " %s 0" "$strict_index")
 			fi
@@ -1030,11 +1030,9 @@ main() {
     fi
 
     #source in the strict_read file for use later
-    source "../helper scripts/strict_read.sh"
-    #source in the safe_expand_file_path file for use later
-    source "../helper scripts/safe-tilde-expansion.sh"
+    source "../bash_helper_scripts/strict_read.sh"
     #source in bash_quoting_parsing
-    source "../helper scripts/bash_quoting_parsing.sh"
+    source "../bash_helper_scripts/bash_quoting_parsing.sh"
     
     #parse the file(s)
     if [ "$ALL_FLG" -ne 1 ]; then
