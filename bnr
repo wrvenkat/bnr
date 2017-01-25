@@ -421,26 +421,28 @@ restore_backup_main(){
 	fi
     else
 	backup_file_name="$BACKUP_DIR"'/'"$backup_file_name"
-    fi
-    #msg="$(printf "Backup file path is %s\n\n" "$backup_file_name")"
-    #log_error 0 "$msg"
-    #continue
+    fi    
 
     #check if the backup file is present
     local file_prefix="$(dirname "$backup_file_name")"	    
     local file_name="${backup_file_name#"$file_prefix"'/'}"
-    if ! src_file_dir="$(cd -P "$file_prefix" 2>&1;\
-	       	 		 if [ -a "$file_name" ]; then\
+    if ! src_file_dir="$(cd -P "$file_prefix" 2>&1 && \
+	       	 		 if [ -e "$file_name" ]; then\
 				    pwd;\
 				 else\
-				    return 1;\
+				    exit 1;\
 				 fi\
 				)"; then
+	
 	msg=$(printf "Backup file %s for %s not found." "$backup_file_name" "$soft")
 	log_error 1 "$msg"
 	update_config_array "$index" 6 0
 	continue
-    fi
+    fi    
+    backup_file_name="$src_file_dir"/"$file_name"
+    #msg="$(printf "Backup file path is %s\n\n" "$backup_file_name")"
+    #log_error 0 "$msg"
+    #continue
     #printf "Backup file path is %s\n\n" "$backup_file_name"
 
     #create the target directory to copy the files into
@@ -653,11 +655,11 @@ create_backup(){
 	    #local unexpanded_file_prefix="$(dirname "$parsed_file_path")"
 	    local file_prefix="$(dirname "$parsed_file_path")"	    
 	    local file_name="${parsed_file_path#"$file_prefix"'/'}"
-	    if ! src_file_dir="$(cd -P "$file_prefix" 2>&1;\
+	    if ! src_file_dir="$(cd -P "$file_prefix" 2>&1 && \
 	       	 		 if [ -a "$file_name" ]; then\
 				    pwd;\
 				 else\
-				    return 1;\
+				    exit 1;\
 				 fi\
 				)"; then
 		#\ || ! (cd -P "$unexpanded_file_prefix"); then
