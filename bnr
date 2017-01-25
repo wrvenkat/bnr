@@ -121,8 +121,8 @@ update_config_array(){
 	return 1
     fi
     
-    msg=$(printf "%s %s %s %s %s %s" "$column1_value_cname" \""$column2_value_cfilename"\" "$column3_value_cprops" \""$column4_value_cconfig_filename"\" "$column5_value_clineno" "$column6_value_cstatus")
-    #printf "MSG is %s\n" "$msg"
+    msg=$(printf "%s %s %s %s %s %s" "$column1_value_cname" "$column2_value_cfilename" "$column3_value_cprops" "$column4_value_cconfig_filename" "$column5_value_clineno" "$column6_value_cstatus")
+    #printf "MSG is %s for index %s\n" "$msg" "$index"
     config_array["$index"]="$msg"
 
     return 0
@@ -331,6 +331,12 @@ restore_backup_main(){
     local result=
     local retVal=
 
+    local tilde_expanded=0
+    local raw_path=
+    local parsed_file_path=
+    local file_path_tilde_prefix=
+    local expanded_file_path_tilde_prefix=    
+
     index="$1"
     soft="${config_array[$index]}"
     #printf "restore_backup_main(): Index %s soft is %s\n" "$index" "$soft"
@@ -340,63 +346,111 @@ restore_backup_main(){
     props="$column3_value_cprops"
     src_file_name="$column4_value_cconfig_filename"
 
-    if ! [ -z "$backup_file_name" ] && [ "$backup_file_name" != "!" ]; then
-	#check the backup file exists in the backup folder
-	#get the absolute path of backup file
-	backup_file_name="$(cd "$BACKUP_DIR"; echo "$(pwd)/$backup_file_name")"
-	if ! [ -a "$backup_file_name" ]; then
-	    msg=$(printf "Backup file \"%s\" for %s doesn't exist in the backup folder." "$backup_file_name" "$soft")
-	    log_error 1 "$msg"
-	    update_config_array "$index" 6 0
-	    return 1
-	fi
-    fi
-
-    if ! [ -z "$src_file_name" ] && [ "$src_file_name" != "!" ]; then
-	#we safely expand src_file_name and see if the directory exists. if it doesn't we create it
-	#printf "SRCFILENAME is %s\n" "$src_file_name"
-	if safe_expand_file_path "$src_file_name"; then
-	    src_file_name="$safe_file_path"
+    #get the canonicalized path
+    if [ "$src_file_name" != '!' ]; then
+	#quoting parse the raw path
+	if bash_quoting_parse "$src_file_name"; then
+	    parsed_file_path="$quoting_parsed_string"
 	else
+	    msg=$(printf "bash_quoting_parse failed with error:%s" "$result")
+	    log_error 1 "$msg"
 	    exit 1
 	fi
-	#get the directory
-	local origIFS="$IFS"    
-	IFS="/"
-	local currFile=
-	local currDir=
-	local tempFile=
-	for tempFile in $src_file_name; do
-	    #printf "Tempfile is %s\n" "$tempFile"
-	    if [ -z "$tempFile" ]; then
-		continue
+	
+	#safely expand file path
+	#../bash_helper_scripts/safe_tilde_expansion.sh "$raw_path" 1
+	if result=$(../bash_helper_scripts/safe_tilde_expansion.sh\
+			"$raw_path" 1); then
+	    #get the prefix, the expanded prefix and the expanded file path
+	    local str=
+	    local index1=1
+	    tilde_expanded=1
+	    while read str; do
+		#printf "Str is %s\n" "$str"
+		if [ "$index1" -eq 1 ]; then
+		    file_path_tilde_prefix="$str"
+		elif [ "$index1" -eq 2 ]; then
+		    expanded_file_path_tilde_prefix="$str"
+		    #printf "Expanded prefix is %s\n" "$expanded_file_path_tilde_prefix"
+		elif [ "$index1" -eq 3 ]; then
+		    parsed_file_path="$str"
+		fi
+		((index1+=1))
+	    done < <(echo "$result")		
+	fi
+	#get the canonicalized path (we can't verify whether it is there or not)
+	src_file_name="$parsed_file_path"
+	printf "Source_file_path: %s\n" "$src_file_name"
+    fi
+
+    #quoting parse the raw path
+    if bash_quoting_parse "$backup_file_name"; then
+	backup_file_name="$quoting_parsed_string"
+    else
+	msg=$(printf "bash_quoting_parse failed with error:%s" "$result")
+	log_error 1 "$msg"
+	exit 1
+    fi
+    #if a mirroring was requested and a src file path is also present
+    if [ "$src_file_name" != '!' ]; then
+	local expanded_tilde_prefix=
+	local relative_backup_path=
+	if [ "$MIRROR_FLG" -eq 1 ] && [ "$tilde_expanded" -eq 1 ]; then
+	    expanded_tilde_prefix="$expanded_file_path_tilde_prefix"
+	    relative_backup_path="$src_file_name"		
+	else
+	    #we also try to remove direct references to values that would've been same as
+	    #a tilde expansion
+	    expanded_tilde_prefix="$(../bash_helper_scripts/safe_tilde_expansion.sh "~")"
+	    #if the src_file_name is relative to /, then we get the rest of the path to make
+	    #it relative to the backup dir
+	    local allbutfirst="${src_file_name#?}"
+	    if [ "${src_file_name%"$allbutfirst"}" == '/' ]; then
+		relative_backup_path="${src_file_name#?}"
+	    else
+		relative_backup_path="$backup_file_name"
 	    fi
-	    if ! [ -z "$currFile" ]; then
-		currDir="$currDir""/""$currFile"
-	    fi
-	    currFile="$tempFile"
-	done
-	IFS="$origIFS"
-	#printf "Directory is %s\n" "$currDir"
-	#if the directory doesn't exist, create it
-	if ! [ -d "$currDir" ]; then
-	    msg=$(printf "Creating directory %s ..." "$currDir")
-	    log_error 0 "$msg"
-	    local result=
-	    local retVal=
-	    result=$(mkdir -p "$currDir" 2>&1)
-	    retVal=$?
-	    if [ "$retVal" -ne 0 ]; then
-		msg=$(printf "mkdir failed with the following error.\n%s" "$result")
-		log_error 1 "$msg"
-		update_config_array "$index" 6 0
-		return 1
-	    fi
+	    unset allbutfirst
+	fi
+	local path_without_tilde_expansion="${relative_backup_path#"$expanded_tilde_prefix"'/'}"
+	backup_file_name="$BACKUP_DIR"'/'"$path_without_tilde_expansion"	
+    else
+	backup_file_name="$BACKUP_DIR"'/'"$backup_file_name"
+    fi
+
+    #check if the backup file is present
+    local file_prefix="$(dirname "$backup_file_name")"	    
+    local file_name="${backup_file_name#"$file_prefix"'/'}"
+    if ! src_file_dir="$(cd -P "$file_prefix";\
+	       	 		 if [ -a "$file_name" ]; then\
+				    pwd;\
+				 else\
+				    return 1;\
+				 fi\
+				)"; then
+	msg=$(printf "Source file %s for %s not found." "$src_file_name" "$soft")
+	log_error 0 "$msg"
+	update_config_array "$index" 6 0
+	continue
+    fi
+    backup_file_name="$src_file_dir"
+    printf "Backup file path is %s\n\n" "$backup_file_name"
+
+    #create the target directory to copy the files into
+    file_prefix"$(dirname "$src_file_name")"
+    if ! [ -d "$file_prefix" ]; then
+	result="$(mkdir -p "$backup_dir" 2>1)"
+	if [ $? -ne 0 ]; then
+	    msg="$(printf "Creating directory \"%s\" failed with error: %s" "$file_prefix" "$result")"
+	    log_error 1 "$msg"
+	    update_config_array "$index" 6 0
+	    continue
 	fi
     fi
 
     msg=$(printf "Restoring config files for %s ..." "$soft")
     log_error 0 "$msg"
+    continue
     
     #now that the directory is created, we see if a script is required with sudo access
     get_config_props_values "$props"
@@ -510,131 +564,170 @@ restore_backup(){
 create_backup(){
     local soft=
     local backup_file_name=
-    local mirror_backup_dir=
-    local tilde_expanded=0
     local props=
     local src_file_name=
+    local src_file_dir=
     local msg=
     local index=
     local result=
-    local retVal=   
+    local retVal=
         
     for index in ${!config_array[@]}; do
-	result=
-	retVal=
+	soft=
 	soft="${config_array[$index]}"
-	#printf "Softline is %s\n" "$soft"
+	#printf "Softline at index %s is %s\n" "$index" "$soft"
+	set +xv
 	get_configfile_column_values "$soft"
 	soft="$column1_value_cname"
 	backup_file_name="$column2_value_cfilename"
 	props="$column3_value_cprops"
 	src_file_name="$column4_value_cconfig_filename"
+	local raw_path=
+	local parsed_file_path=
+	local mirror_backup_dir=
+	local tilde_expanded=0
+	local mirror_backup_dir=
+	local file_path_tilde_prefix=
+	local expanded_file_path_tilde_prefix=
+	tilde_expanded=0
+	result=
+	retVal=
 
 	#check the backup dir exists and if not, create it
 	if ! [ -d "$BACKUP_DIR" ]; then
 	    local result=
 	    local retVal=
-	    result=$(mkdir "$BACKUP_DIR" 2>&1)
+	    result="$(mkdir "$BACKUP_DIR" 2>&1)"
 	    if [ "$?" -ne 0 ]; then
 		msg=$(printf "Unable to create directory with the following error.\n%s" "$result")
 		log_error 1 "$msg"
 		return 1
+	    else
+		BACKUP_DIR="$(cd -P "$BACKUP_DIR"; pwd)"
 	    fi
+	else
+	    BACKUP_DIR="$(cd -P "$BACKUP_DIR"; pwd)"
 	fi
 
-	#get the absolute path of backup file depending on whether mirror is set or not
-	if [ "$MIRROR_FLG" -eq 1 ] && [ "$src_File_name" != '!' ]; then
-	    local parsed_file_path="$src_file_name"
-	    local file_path_tilde_prefix=
-	    local expanded_file_path_tilde_prefix=
-	    local parsed_expanded_file_path=
-	    local expanded_part=
-	    local result=
-	    #quoting parse the source file path
-	    if result=$(bash_quoting_parse "$orig_file_path"); then
+	#check if the source file exists and get the canonicalized path
+	if [ "$src_file_name" != '!' ]; then
+	    raw_path="$src_file_name"	    
+	    #quoting parse the raw path
+	    if bash_quoting_parse "$raw_path"; then
 		parsed_file_path="$quoting_parsed_string"
 	    else
 		msg=$(printf "bash_quoting_parse failed with error:%s" "$result")
 		log_error 1 "$msg"
 		exit 1
 	    fi
+	    
 	    #safely expand file path
-	    if result=$(../bash_helper_scripts.safe_tilde_expansion.sh\
-					"$src_file_name" 1); then
-		tilde_expanded=1
+	    #../bash_helper_scripts/safe_tilde_expansion.sh "$raw_path" 1
+	    if result=$(../bash_helper_scripts/safe_tilde_expansion.sh\
+			    "$raw_path" 1); then
 		#get the prefix, the expanded prefix and the expanded file path
 		local str=
-		local index=1
+		local index1=1
+		tilde_expanded=1
 		while read str; do
-		    if [ "$index" -eq 1 ]; then
+		    #printf "Str is %s\n" "$str"
+		    if [ "$index1" -eq 1 ]; then
 			file_path_tilde_prefix="$str"
-		    elif [ "$index" -eq 2 ]; then
+		    elif [ "$index1" -eq 2 ]; then
 			expanded_file_path_tilde_prefix="$str"
-		    elif [ "$index" -eq 3 ]; then
-			parsed_expanded_file_path="$str"
+			#printf "Expanded prefix is %s\n" "$expanded_file_path_tilde_prefix"
+		    elif [ "$index1" -eq 3 ]; then
+			parsed_file_path="$str"
 		    fi
-		    ((index+=1))
-		done < <(echo "$result")
-		#get the canonicalized path
-		parsed_file_path=$(val1=$(dirname "$parsed_file_path"); cd -P "$val1"; pwd)
-		#remove any expanded prefix
-		parsed_file_path=${parsed_file_path#"$expanded_file_path_tilde_prefix"}
-		#remove the first /
-		parsed_file_path=${parsed_file_path#?}
-		backup_file_name="$parsed_file_path"
-	    else
-		src_file_name="$parsed_file_path"
+		    ((index1+=1))
+		done < <(echo "$result")	
 	    fi
+	    #get the canonicalized path
+	    #get the filename
+	    #local unexpanded_file_prefix="$(dirname "$parsed_file_path")"
+	    local file_prefix="$(dirname "$parsed_file_path")"	    
+	    local file_name="${parsed_file_path#"$file_prefix"'/'}"
+	    if ! src_file_dir="$(cd -P "$file_prefix";\
+	       	 		 if [ -a "$file_name" ]; then\
+				    pwd;\
+				 else\
+				    return 1;\
+				 fi\
+				)"; then
+		#\ || ! (cd -P "$unexpanded_file_prefix"); then
+		msg=$(printf "Source file %s for %s not found." "$parsed_file_path" "$soft")
+		log_error 0 "$msg"
+		update_config_array "$index" 6 0
+		continue
+	    fi
+	    #printf "Parsed_file_dir: %s\n" "$src_file_dir"
+	    src_file_name="$src_file_dir"'/'"$file_name"
+	    #msg="$(printf "Source_file_path: %s\n" "$src_file_name")"
+	    #log_error 0 "$msg"
 	fi
-	backup_file_name="$(cd "$BACKUP_DIR"; echo "$(pwd)/$backup_file_name")"
-	printf "Backup_File_Name is %s\n" "$backup_file_name"
-	
-	#quoting parse the source file path
-	if result=$(bash_quoting_parse "$orig_file_path"); then
-	    parsed_file_path="$quoting_parsed_string"
+
+	#get the backup file dir
+
+	#quoting parse the raw path
+	if bash_quoting_parse "$backup_file_name"; then
+	    backup_file_name="$quoting_parsed_string"
 	else
 	    msg=$(printf "bash_quoting_parse failed with error:%s" "$result")
 	    log_error 1 "$msg"
 	    exit 1
 	fi
+	#if a mirroring was requested and a src file path is also present
 	if [ "$src_file_name" != '!' ]; then
-	    #safely expand file path
-	    if ! src_file_name=$(../bash_helper_scripts.safe_tilde_expansion.sh\
-				     "$src_file_name" 1); then
-		msg=$(printf "bash_quoting_parse failed with error:%s" "$src_file_name")
-		log_error 1 "$msg"
-		exit 1
+	    local expanded_tilde_prefix=
+	    local relative_backup_path=
+	    if [ "$MIRROR_FLG" -eq 1 ] && [ "$tilde_expanded" -eq 1 ]; then
+		expanded_tilde_prefix="$expanded_file_path_tilde_prefix"
+		relative_backup_path="$src_file_name"		
+	    else
+		#we also try to remove direct references to values that would've been same as
+		#a tilde expansion
+		expanded_tilde_prefix="$(../bash_helper_scripts/safe_tilde_expansion.sh "~")"
+		#if the src_file_name is relative to /, then we get the rest of the path to make
+		#it relative to the backup dir
+		local allbutfirst="${src_file_name#?}"
+		if [ "${src_file_name%"$allbutfirst"}" == '/' ]; then
+		    relative_backup_path="${src_file_name#?}"
+		else
+		    relative_backup_path="$backup_file_name"
+		fi
+		unset allbutfirst
 	    fi
-	    #get canonicalized path
-	    local actual_filename=$(dirname "$src_file_name")
-	    actual_filename=${src_file_name#"$actual_filename"}
-	    local src_file_dir=$(val1=$(dirname "$src_file_name"); cd -P "$val1"; pwd)
-	    src_file_name="$src_file_dir""$actual_filename"
+	    local path_without_tilde_expansion="${relative_backup_path#"$expanded_tilde_prefix"'/'}"
+	    backup_file_name="$BACKUP_DIR"'/'"$path_without_tilde_expansion"
+	else
+	    backup_file_name="$BACKUP_DIR"'/'"$backup_file_name"
 	fi
-	
-	printf "SRCFILENAME is %s\n" "$src_file_name"
-	if [ "$src_file_name" != "!" ] && ! [ -a "$src_file_name" ]; then
-	    msg=$(printf "Source file \"%s\" for %s not found." "$src_file_name" "$soft")
-	    log_error 0 "$msg"
-	    continue		
-	fi
+	#msg="$(printf "Backup file path is %s\n\n" "$backup_file_name")"
+	#log_error 0 "$msg"
 
-	#create backup dir for current entry
-	if [ "$MIRROR_FLG" -eq 1 ]; then
-	    local dirval=$(dirname "$backup_file_name")
-	    msg=$(printf "Creating backup directory \"%s\" ..." "%dirval")
-	    log_error 0 "$msg"	    
+	#create the relative backup directory(ies) if it doesn't exist yet	
+	local backup_dir="$(dirname "$backup_file_name")"
+	if ! [ -d "$backup_dir" ]; then
+	    result="$(mkdir -p "$backup_dir" 2>1)"
+	    if [ $? -ne 0 ]; then
+		msg="$(printf "Creating directory \"%s\" failed with error: %s" "$backup_dir" "$result")"
+		log_error 1 "$msg"
+		update_config_array "$index" 6 0
+		continue
+	    fi
 	fi
 	
 	msg=$(printf "Backing up %s... " "$soft")
 	log_error 0 "$msg"
-	
+
+	#create the backup
 	get_config_props_values "$props"
 	#if it requires a special script for creating a backup
 	if [ "$props2_value_cscript" -eq 1 ]; then
 	    #call the script
-	    result=$(call_script "$soft" "$backup_file_name" "$src_file_name" 0 2>&1)
-	    retVal=$?
+	    #result=$(call_script "$soft" "$backup_file_name" "$src_file_name" 0 2>&1)
+	    #retVal=$?
+	    retVal=0
 	    if [ "$retVal" -eq 1 ]; then
 		update_config_array "$index" 6 0
 		msg+=$(printf "Creating backup for %s failed with the following error: \n%s\n" "$soft" "$result")
@@ -642,24 +735,22 @@ create_backup(){
 	    else
 		update_config_array "$index" 6 1
 	    fi
-	    continue
-	fi	
-
-	#TODO: There could potential issues here when the filepath used has unescaped characters
-	#that wreak havoc when used in a command-line context. Tests needed.
-	msg=$(printf "Executing \"cp %s %s\"... " "$src_file_name" "$backup_file_name")
-	log_error 0 "$msg"
-	#result=$(cp "$src_file_name" "$backup_file_name" 2>&1)
-	#retVal=$?
-	retVal=0
-	if [ "$retVal" -ne 0 ]; then
-	    msg=$(printf "Error copying \"%s\" to \"%s\"." "$src_file_name" "$backup_file_name")
-	    log_error 1 "$msg"
-	    update_config_array "$index" 6 0
 	else
-	    update_config_array "$index" 6 1	    
-	fi
-	#printf "Done\n"
+	    #create the backup
+	    msg=$(printf "Executing \"cp %s %s\"... " "$src_file_name" "$backup_file_name")
+	    log_error 0 "$msg"
+	    #result=$(cp "$src_file_name" "$backup_file_name" 2>&1)
+	    #retVal=$?
+	    retVal=0
+	    if [ "$retVal" -ne 0 ]; then
+		msg=$(printf "Error copying \"%s\" to \"%s\"." "$src_file_name" "$backup_file_name")
+		log_error 1 "$msg"
+		update_config_array "$index" 6 0
+	    else
+		update_config_array "$index" 6 1	    
+	    fi
+	fi	
+	log_error 0 "---"
     done
 }
 
@@ -691,7 +782,7 @@ get_configfile_column_values() {
     fi
     local column=
     #printf "Received column_line is %s\n" "$1"
-    strict_read --field='\t,\s' --line="\n" --group='"' < <(printf "%s" "$1")
+    strict_read --field='\t,\s' --line="\n" --group='"' --esc < <(printf "%s" "$1")
     while strict_get; do	
 	if [ -z "$strict_line" ]; then
 	    msg=$(printf "get_configfile_column_values(): No value found for given line.")
@@ -761,6 +852,7 @@ get_config_props_values() {
 	fi
 	((props_count+=1))
     done
+    IFS="$orig_IFS"
     
     if [ $props_count -ne 3 ]; then
 	msg=$(printf "get_config_props_value(): Error when parsing properties.")
@@ -772,7 +864,7 @@ get_config_props_values() {
 	IFS="$orig_IFS"
 	return 1
     fi
-    IFS="$orig_IFS"
+
     return 0
 }
 
@@ -799,7 +891,7 @@ print_config_array() {
 	    if printf_proof "$column2_value_cfilename"; then
 		column2_value_cfilename="$printf_proof_str"
 	    fi
-	    msg+="$(printf "%s\t\"%s\"\t%s\t\"%s\"\t%s\t%s\n" "$column1_value_cname" "$column2_value_cfilename" "$column3_value_cprops" "$column4_value_cconfig_filename" "$column5_value_clineno" "$column6_value_cstatus")\n"	    
+	    msg+="$(printf "%s\t%s\t%s\t%s\t%s\t%s\n" "$column1_value_cname" "$column2_value_cfilename" "$column3_value_cprops" "$column4_value_cconfig_filename" "$column5_value_clineno" "$column6_value_cstatus")\n"	    
 	fi
     done
     printf "$msg" | column -t -s $'\t'
@@ -1092,7 +1184,7 @@ parse_args(){
 	exit 0
     fi
 
-    local parsed_args=$(getopt -o h -l list,restore,help,backup,all,installlog:,configfile: -n 'backup-soft' -- "$@" 2>&1)
+    local parsed_args=$(getopt -o h -l list,restore,help,backup,all,mirror,backupdir:,installlog:,configfile: -n 'backup-soft' -- "$@" 2>&1)
 
     #an ugly way of finding if the parsing of the arguments went through successfully
     local line_count=$(echo "$parsed_args" | wc -l)
