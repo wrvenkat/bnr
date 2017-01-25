@@ -300,13 +300,12 @@ call_script(){
 
     msg=$(printf "Calling \"bash %s %s %s\"\n" "$script_path" "$backup_file_name" "$4")
     log_error 0 "$msg"
-    #result=$(bash "$script_path" "$backup_file_name" "$4" 2>&1)
-    #if [ $? -ne 0 ]; then
-    #	msg=$(printf "Script failed with error \n%s\n" "$result")
-    #	log_error 1 "$msg"
-    #fi
-    #return $?
-    return 0
+    result=$(bash "$script_path" "$backup_file_name" "$4" 2>&1)
+    if [ $? -ne 0 ]; then
+    	msg=$(printf "Script failed with error \n%s\n" "$result")
+    	log_error 1 "$msg"
+    fi
+    return $?
 }
 
 #restores backup of all software that are listed in the config2.txt and successfully installed.
@@ -725,8 +724,8 @@ create_backup(){
 	#if it requires a special script for creating a backup
 	if [ "$props2_value_cscript" -eq 1 ]; then
 	    #call the script
-	    #result=$(call_script "$soft" "$backup_file_name" "$src_file_name" 0 2>&1)
-	    #retVal=$?
+	    result=$(call_script "$soft" "$backup_file_name" "$src_file_name" 0 2>&1)
+	    retVal=$?
 	    retVal=0
 	    if [ "$retVal" -eq 1 ]; then
 		update_config_array "$index" 6 0
@@ -739,8 +738,8 @@ create_backup(){
 	    #create the backup
 	    msg=$(printf "Executing \"cp %s %s\"... " "$src_file_name" "$backup_file_name")
 	    log_error 0 "$msg"
-	    #result=$(cp "$src_file_name" "$backup_file_name" 2>&1)
-	    #retVal=$?
+	    result=$(cp "$src_file_name" "$backup_file_name" 2>&1)
+	    retVal=$?
 	    retVal=0
 	    if [ "$retVal" -ne 0 ]; then
 		msg=$(printf "Error copying \"%s\" to \"%s\"." "$src_file_name" "$backup_file_name")
@@ -749,8 +748,7 @@ create_backup(){
 	    else
 		update_config_array "$index" 6 1	    
 	    fi
-	fi	
-	log_error 0 "---"
+	fi
     done
 }
 
