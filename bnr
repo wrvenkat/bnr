@@ -24,7 +24,7 @@ MIRROR_FLG=0
 INSTALL_LOG_FILE=installed_ppa.conf
 DEFAULT_BACKUP_DIR="configfiles"
 BACKUP_DIR=
-BACKUP_SCRIPTS_DIR="config scripts"
+BACKUP_SCRIPTS_DIR="config_scripts"
 CONFIG_FILE=bnr-conf/bnr_list.conf
 ERROR_LOG_FILE=backup.log
 SUCCESS_LOG_FILE=bnr_success_list.conf
@@ -298,14 +298,16 @@ call_script(){
 	return 1
     fi
 
+    local retVal=
     msg=$(printf "Calling \"bash %s %s %s\"\n" "$script_path" "$backup_file_name" "$4")
     log_error 0 "$msg"
     result=$(bash "$script_path" "$backup_file_name" "$4" 2>&1)
-    if [ $? -ne 0 ]; then
+    retVal="$?"
+    if [ "$retVal" -ne 0 ]; then
     	msg=$(printf "Script failed with error \n%s\n" "$result")
     	log_error 1 "$msg"
     fi
-    return $?
+    return "$retVal"
 }
 
 #restores backup of all software that are listed in the config2.txt and successfully installed.
@@ -355,11 +357,11 @@ restore_backup_main(){
 	    log_error 1 "$msg"
 	    exit 1
 	fi
-	
+		
 	#safely expand file path
 	#../bash_helper_scripts/safe_tilde_expansion.sh "$raw_path" 1
 	if result=$(../bash_helper_scripts/safe_tilde_expansion.sh\
-			"$raw_path" 1); then
+			"$src_file_name" 1); then
 	    #get the prefix, the expanded prefix and the expanded file path
 	    local str=
 	    local index1=1
@@ -379,7 +381,7 @@ restore_backup_main(){
 	fi
 	#get the canonicalized path (we can't verify whether it is there or not)
 	src_file_name="$parsed_file_path"
-	printf "Source_file_path: %s\n" "$src_file_name"
+	#printf "Source_file_path: %s\n" "$src_file_name"
     fi
 
     #quoting parse the raw path
@@ -397,7 +399,7 @@ restore_backup_main(){
 	if [ "$MIRROR_FLG" -eq 1 ] && [ "$tilde_expanded" -eq 1 ]; then
 	    expanded_tilde_prefix="$expanded_file_path_tilde_prefix"
 	    relative_backup_path="$src_file_name"		
-	else
+	elif [ "$MIRROR_FLG" -eq 1 ] && [ "$tilde_expanded" -eq 0 ]; then
 	    #we also try to remove direct references to values that would've been same as
 	    #a tilde expansion
 	    expanded_tilde_prefix="$(../bash_helper_scripts/safe_tilde_expansion.sh "~")"
@@ -410,9 +412,11 @@ restore_backup_main(){
 		relative_backup_path="$backup_file_name"
 	    fi
 	    unset allbutfirst
+	    local path_without_tilde_expansion="${relative_backup_path#"$expanded_tilde_prefix"'/'}"
+	    backup_file_name="$BACKUP_DIR"'/'"$path_without_tilde_expansion"
+	else
+	    backup_file_name="$BACKUP_DIR"'/'"$backup_file_name"
 	fi
-	local path_without_tilde_expansion="${relative_backup_path#"$expanded_tilde_prefix"'/'}"
-	backup_file_name="$BACKUP_DIR"'/'"$path_without_tilde_expansion"	
     else
 	backup_file_name="$BACKUP_DIR"'/'"$backup_file_name"
     fi
@@ -420,23 +424,22 @@ restore_backup_main(){
     #check if the backup file is present
     local file_prefix="$(dirname "$backup_file_name")"	    
     local file_name="${backup_file_name#"$file_prefix"'/'}"
-    if ! src_file_dir="$(cd -P "$file_prefix";\
+    if ! src_file_dir="$(cd -P "$file_prefix" 2>&1;\
 	       	 		 if [ -a "$file_name" ]; then\
 				    pwd;\
 				 else\
 				    return 1;\
 				 fi\
 				)"; then
-	msg=$(printf "Source file %s for %s not found." "$src_file_name" "$soft")
-	log_error 0 "$msg"
+	msg=$(printf "Backup file %s for %s not found." "$backup_file_name" "$soft")
+	log_error 1 "$msg"
 	update_config_array "$index" 6 0
 	continue
     fi
-    backup_file_name="$src_file_dir"
-    printf "Backup file path is %s\n\n" "$backup_file_name"
+    #printf "Backup file path is %s\n\n" "$backup_file_name"
 
     #create the target directory to copy the files into
-    file_prefix"$(dirname "$src_file_name")"
+    file_prefix="$(dirname "$src_file_name")"
     if ! [ -d "$file_prefix" ]; then
 	result="$(mkdir -p "$backup_dir" 2>1)"
 	if [ $? -ne 0 ]; then
@@ -449,7 +452,6 @@ restore_backup_main(){
 
     msg=$(printf "Restoring config files for %s ..." "$soft")
     log_error 0 "$msg"
-    continue
     
     #now that the directory is created, we see if a script is required with sudo access
     get_config_props_values "$props"
@@ -646,7 +648,7 @@ create_backup(){
 	    #local unexpanded_file_prefix="$(dirname "$parsed_file_path")"
 	    local file_prefix="$(dirname "$parsed_file_path")"	    
 	    local file_name="${parsed_file_path#"$file_prefix"'/'}"
-	    if ! src_file_dir="$(cd -P "$file_prefix";\
+	    if ! src_file_dir="$(cd -P "$file_prefix" 2>&1;\
 	       	 		 if [ -a "$file_name" ]; then\
 				    pwd;\
 				 else\
@@ -681,10 +683,10 @@ create_backup(){
 	    local relative_backup_path=
 	    if [ "$MIRROR_FLG" -eq 1 ] && [ "$tilde_expanded" -eq 1 ]; then
 		expanded_tilde_prefix="$expanded_file_path_tilde_prefix"
-		relative_backup_path="$src_file_name"		
-	    else
+		relative_backup_path="$src_file_name"
+	    elif [ "$MIRROR_FLG" -eq 1 ] && [ "$tilde_expanded" -eq 0 ]; then
 		#we also try to remove direct references to values that would've been same as
-		#a tilde expansion
+		#a tilde expansion from the given source file name
 		expanded_tilde_prefix="$(../bash_helper_scripts/safe_tilde_expansion.sh "~")"
 		#if the src_file_name is relative to /, then we get the rest of the path to make
 		#it relative to the backup dir
@@ -695,9 +697,11 @@ create_backup(){
 		    relative_backup_path="$backup_file_name"
 		fi
 		unset allbutfirst
+	 	local path_without_tilde_expansion="${relative_backup_path#"$expanded_tilde_prefix"'/'}"
+		backup_file_name="$BACKUP_DIR"'/'"$path_without_tilde_expansion"
+	    else		
+		backup_file_name="$BACKUP_DIR"'/'"$backup_file_name"
 	    fi
-	    local path_without_tilde_expansion="${relative_backup_path#"$expanded_tilde_prefix"'/'}"
-	    backup_file_name="$BACKUP_DIR"'/'"$path_without_tilde_expansion"
 	else
 	    backup_file_name="$BACKUP_DIR"'/'"$backup_file_name"
 	fi
@@ -721,12 +725,13 @@ create_backup(){
 
 	#create the backup
 	get_config_props_values "$props"
+	retVal=
 	#if it requires a special script for creating a backup
 	if [ "$props2_value_cscript" -eq 1 ]; then
 	    #call the script
 	    result=$(call_script "$soft" "$backup_file_name" "$src_file_name" 0 2>&1)
 	    retVal=$?
-	    retVal=0
+	    #printf "Retval is %s and restul is %s\n" "$retVal" "$result"
 	    if [ "$retVal" -eq 1 ]; then
 		update_config_array "$index" 6 0
 		msg+=$(printf "Creating backup for %s failed with the following error: \n%s\n" "$soft" "$result")
@@ -740,7 +745,6 @@ create_backup(){
 	    log_error 0 "$msg"
 	    result=$(cp "$src_file_name" "$backup_file_name" 2>&1)
 	    retVal=$?
-	    retVal=0
 	    if [ "$retVal" -ne 0 ]; then
 		msg=$(printf "Error copying \"%s\" to \"%s\"." "$src_file_name" "$backup_file_name")
 		log_error 1 "$msg"
@@ -750,6 +754,7 @@ create_backup(){
 	    fi
 	fi
     done
+    return 0
 }
 
 #this function retrieves the column value from the given line from the config-config file
