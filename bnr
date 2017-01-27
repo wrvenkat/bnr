@@ -304,7 +304,7 @@ call_script(){
     result=$(bash "$script_path" "$backup_file_name" "$4" 2>&1)
     retVal="$?"
     if [ "$retVal" -ne 0 ]; then
-    	msg=$(printf "Script failed with error \n%s\n" "$result")
+    	msg=$(printf "Script failed with error:\n%s\n" "$result")
     	log_error 1 "$msg"
     fi
     return "$retVal"
@@ -744,7 +744,7 @@ create_backup(){
 	    #printf "Retval is %s and restul is %s\n" "$retVal" "$result"
 	    if [ "$retVal" -eq 1 ]; then
 		update_config_array "$index" 6 0
-		msg+=$(printf "Creating backup for %s failed with the following error: \n%s\n" "$soft" "$result")
+		msg=$(printf "Creating backup for %s failed with the following error: \n%s" "$soft" "$result")
 		log_error 1 "$msg"
 	    else
 		update_config_array "$index" 6 1
