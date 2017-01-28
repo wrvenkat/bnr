@@ -91,7 +91,7 @@ create_log() {
 #3 - the value to replace it with
 update_config_array(){
     if [ -z "$1" ] || [ -z "$1" ] || [ -z "$1" ]; then
-	log_error 1 "update_config_array(): Invalid number of arguments received."
+	log_msg -e --msg="update_config_array(): Invalid number of arguments received."
 	return 1
     fi
 
@@ -117,7 +117,7 @@ update_config_array(){
     elif [ $column_no -eq 6 ]; then
 	column6_value_cstatus="$value"
     else
-	log_error 1 "update_config_array(): Invalid column number received."
+	log_msg -e --msg="update_config_array(): Invalid column number received."
 	return 1
     fi
     
@@ -168,7 +168,7 @@ printf_proof(){
 #3 - optional, end index
 search_config_array(){
     if [ -z "$1" ]; then
-	log_error 0 "search_config(): input empty"
+	log_msg --msg="search_config(): input empty"
 	return 1
     fi
 
@@ -213,7 +213,7 @@ search_config_array(){
 #2 - the term to search for
 search_back(){
     if [ -z "$1" ] || [ -z "$2" ]; then
-	log_error 0 "search_back(): Either of the required arguments are empty"
+	log_msg --msg="search_back(): Either of the required arguments are empty"
 	exit 1
     fi
 
@@ -257,7 +257,7 @@ search_and_print(){
 
 	if search_config_array "$soft"; then
 	    msg=$(printf "For %s start index is %s.\n" "$soft" "$SEARCH_INDEX_1")
-	    log_error 0 "$msg"
+	    log_msg --msg="$msg"
 	fi
     done
 }
@@ -276,7 +276,7 @@ call_script(){
     local script_path=
 
     if [ -z "$1" ] || [ -z "$2" ] || [ -z "$3" ] || [ -z "$4" ]; then
-	log_error 1 "call_script(): Required arguments not provided."
+	log_msg -e --msg="call_script(): Required arguments not provided."
 	return 1
     fi
     
@@ -285,7 +285,7 @@ call_script(){
     src_file_name="$3"
 
     if ! [ -d "$BACKUP_SCRIPTS_DIR" ]; then
-	log_error 1 "Backup scripts directory not present."
+	log_msg -e --msg="Backup scripts directory not present."
 	return 1
     fi
 
@@ -294,18 +294,18 @@ call_script(){
     script_path="$(cd "$BACKUP_SCRIPTS_DIR"; echo "$(pwd)/$script_path")"
     if ! [ -a "$script_path" ]; then
 	msg=$(printf "No backup/restore script found for %s." "$soft")
-	log_error 1 "$msg"
+	log_msg -e --msg="$msg"
 	return 1
     fi
 
     local retVal=
     msg=$(printf "Calling \"bash %s %s %s\"\n" "$script_path" "$backup_file_name" "$4")
-    log_error 0 "$msg"
+    log_msg --msg="$msg"
     result=$(bash "$script_path" "$backup_file_name" "$4" 2>&1)
     retVal="$?"
     if [ "$retVal" -ne 0 ]; then
     	msg=$(printf "Script failed with error:\n%s\n" "$result")
-    	log_error 1 "$msg"
+    	log_msg -e --msg="$msg"
     fi
     return "$retVal"
 }
@@ -318,7 +318,7 @@ call_script(){
 #overwritten otherwise a new directory is created and files copied.
 restore_backup_main(){
     if [ -z "$1" ]; then
-	log_error 1 "restore_backup_main(): Invalid arguments received."
+	log_msg -e --msg="restore_backup_main(): Invalid arguments received."
 	return 1
     fi
 
@@ -354,7 +354,7 @@ restore_backup_main(){
 	    parsed_file_path="$quoting_parsed_string"
 	else
 	    msg=$(printf "bash_quoting_parse failed with error:%s" "$result")
-	    log_error 1 "$msg"
+	    log_msg -e --msg="$msg"
 	    exit 1
 	fi
 		
@@ -389,7 +389,7 @@ restore_backup_main(){
 	backup_file_name="$quoting_parsed_string"
     else
 	msg=$(printf "bash_quoting_parse failed with error:%s" "$result")
-	log_error 1 "$msg"
+	log_msg -e --msg="$msg"
 	exit 1
     fi
     #if a mirroring was requested and a src file path is also present
@@ -435,13 +435,13 @@ restore_backup_main(){
 				)"; then
 	
 	msg=$(printf "Backup file %s for %s not found." "$backup_file_name" "$soft")
-	log_error 1 "$msg"
+	log_msg -e --msg="$msg"
 	update_config_array "$index" 6 0
 	continue
     fi    
     backup_file_name="$src_file_dir"/"$file_name"
     #msg="$(printf "Backup file path is %s\n\n" "$backup_file_name")"
-    #log_error 0 "$msg"
+    #log_msg --msg="$msg"
     #continue
     #printf "Backup file path is %s\n\n" "$backup_file_name"
 
@@ -451,14 +451,14 @@ restore_backup_main(){
 	result="$(mkdir -p "$backup_dir" 2>1)"
 	if [ $? -ne 0 ]; then
 	    msg="$(printf "Creating directory \"%s\" failed with error: %s" "$file_prefix" "$result")"
-	    log_error 1 "$msg"
+	    log_msg -e --msg="$msg"
 	    update_config_array "$index" 6 0
 	    continue
 	fi
     fi
 
     msg=$(printf "Restoring config files for %s ..." "$soft")
-    log_error 0 "$msg"
+    log_msg --msg="$msg"
     
     #now that the directory is created, we see if a script is required with sudo access
     get_config_props_values "$props"
@@ -472,7 +472,7 @@ restore_backup_main(){
 	    return 0
 	else
 	    msg=$(printf "Backup restore for %s failed with the following error:\n%s\n" "$result")
-	    log_error 1 "$msg"
+	    log_msg -e --msg="$msg"
 	    update_config_array "$index" 6 0
 	    return 1
 	fi
@@ -486,18 +486,18 @@ restore_backup_main(){
 	#that wreak havoc when used in a command-line context. Tests needed.
 	#DONE: Fix Sudo copying
 	msg=$(printf "Executing \"sudo cp %s %s\"... " "$backup_file_name" "$src_file_name")
-	log_error 0 "$msg"
+	log_msg --msg="$msg"
 	result=$(sudo su -c "cp \"$backup_file_name\" \"$src_file_name\"" 2>&1)
 	retval=$?
     else
 	msg=$(printf "Executing \"cp %s %s\"... " "$backup_file_name" "$src_file_name")
-	log_error 0 "$msg"
+	log_msg --msg="$msg"
 	result=$(cp "$backup_file_name" "$src_file_name" 2>&1)
 	retVal=$?
     fi
     if [ "$retVal" -ne 0 ]; then
 	msg=$(printf "Copying failed with error\n%s" "$result")
-	log_error 1 "$msg"
+	log_msg -e --msg="$msg"
 	update_config_array "$index" 6 0
 	return 1
     else
@@ -521,7 +521,7 @@ restore_backup(){
 
 	    if search_config_array "$soft"; then
 		#msg=$(printf "Start index for %s is %s." "$soft" "$SEARCH_INDEX_1")
-		#log_error 0 "$msg"
+		#log_msg --msg="$msg"
 		#now that we have the start index, we've to take care of the config files
 		#of all occurence for this software
 		local index1="$SEARCH_INDEX_1"
@@ -608,7 +608,7 @@ create_backup(){
 	    result="$(mkdir "$BACKUP_DIR" 2>&1)"
 	    if [ "$?" -ne 0 ]; then
 		msg=$(printf "Unable to create directory with the following error.\n%s" "$result")
-		log_error 1 "$msg"
+		log_msg -e --msg="$msg"
 		return 1
 	    else
 		BACKUP_DIR="$(cd -P "$BACKUP_DIR"; pwd)"
@@ -625,7 +625,7 @@ create_backup(){
 		parsed_file_path="$quoting_parsed_string"
 	    else
 		msg=$(printf "bash_quoting_parse failed with error:%s" "$result")
-		log_error 1 "$msg"
+		log_msg -e --msg="$msg"
 		exit 1
 	    fi
 	    
@@ -664,14 +664,14 @@ create_backup(){
 				)"; then
 		#\ || ! (cd -P "$unexpanded_file_prefix"); then
 		msg=$(printf "Source file %s for %s not found." "$parsed_file_path" "$soft")
-		log_error 0 "$msg"
+		log_msg --msg="$msg"
 		update_config_array "$index" 6 0
 		continue
 	    fi
 	    #printf "Parsed_file_dir: %s\n" "$src_file_dir"
 	    src_file_name="$src_file_dir"'/'"$file_name"
 	    #msg="$(printf "Source_file_path: %s\n" "$src_file_name")"
-	    #log_error 0 "$msg"
+	    #log_msg --msg="$msg"
 	fi
 
 	#get the backup file dir
@@ -681,7 +681,7 @@ create_backup(){
 	    backup_file_name="$quoting_parsed_string"
 	else
 	    msg=$(printf "bash_quoting_parse failed with error:%s" "$result")
-	    log_error 1 "$msg"
+	    log_msg -e --msg="$msg"
 	    exit 1
 	fi
 	#if a mirroring was requested and a src file path is also present
@@ -715,7 +715,7 @@ create_backup(){
 	    backup_file_name="$BACKUP_DIR"'/'"$backup_file_name"
 	fi
 	#msg="$(printf "Backup file path is %s\n\n" "$backup_file_name")"
-	#log_error 0 "$msg"
+	#log_msg --msg="$msg"
 	#continue
 
 	#create the relative backup directory(ies) if it doesn't exist yet	
@@ -724,14 +724,14 @@ create_backup(){
 	    result="$(mkdir -p "$backup_dir" 2>1)"
 	    if [ $? -ne 0 ]; then
 		msg="$(printf "Creating directory \"%s\" failed with error: %s" "$backup_dir" "$result")"
-		log_error 1 "$msg"
+		log_msg -e --msg="$msg"
 		update_config_array "$index" 6 0
 		continue
 	    fi
 	fi
 	
 	msg=$(printf "Backing up %s... " "$soft")
-	log_error 0 "$msg"
+	log_msg --msg="$msg"
 
 	#create the backup
 	get_config_props_values "$props"
@@ -745,19 +745,19 @@ create_backup(){
 	    if [ "$retVal" -eq 1 ]; then
 		update_config_array "$index" 6 0
 		msg=$(printf "Creating backup for %s failed with the following error: \n%s" "$soft" "$result")
-		log_error 1 "$msg"
+		log_msg -e --msg="$msg"
 	    else
 		update_config_array "$index" 6 1
 	    fi
 	else
 	    #create the backup
 	    msg=$(printf "Executing \"cp %s %s\"... " "$src_file_name" "$backup_file_name")
-	    log_error 0 "$msg"
+	    log_msg --msg="$msg"
 	    result=$(cp "$src_file_name" "$backup_file_name" 2>&1)
 	    retVal=$?
 	    if [ "$retVal" -ne 0 ]; then
 		msg=$(printf "Error copying \"%s\" to \"%s\"." "$src_file_name" "$backup_file_name")
-		log_error 1 "$msg"
+		log_msg -e --msg="$msg"
 		update_config_array "$index" 6 0
 	    else
 		update_config_array "$index" 6 1	    
@@ -790,7 +790,7 @@ get_configfile_column_values() {
     column6_value_cstatus=
     local column_count=1
     if [ -z "$1" ]; then
-	log_error 1 "get_configfile_column_values(): Incorrect arguments received"
+	log_msg -e --msg="get_configfile_column_values(): Incorrect arguments received"
 	exit 1
     fi
     local column=
@@ -799,7 +799,7 @@ get_configfile_column_values() {
     while strict_get; do	
 	if [ -z "$strict_line" ]; then
 	    msg=$(printf "get_configfile_column_values(): No value found for given line.")
-	    log_error 1 "$msg"
+	    log_msg -e --msg="$msg"
 	    return 1
 	fi
 	local index=0
@@ -826,7 +826,7 @@ get_configfile_column_values() {
     if [ $column_count -ne 7 ]; then
 	msg=$(printf "get_configfile_column_values: Expected values for columns not received for %s." "$column1_value_name")
 	#printf "get_configfile_column_values(): Column_Count is %s and column is %s\n" "$column_count" "$column"
-	log_error 1 "$msg"
+	log_msg -e --msg="$msg"
 	return 1
     fi
     #printf "get_configfile_column_values(): Column_Count is %s and column is %s\n" "$column_count" "$column"
@@ -852,7 +852,7 @@ get_config_props_values() {
 
     if [ -z "$1" ]; then
 	msg=$(printf "get_config_props_value(): Required arguments are empty\n")
-	log_error 1 "$msg"
+	log_msg -e --msg="$msg"
 	return 1
     fi
 
@@ -870,9 +870,9 @@ get_config_props_values() {
     if [ $props_count -ne 3 ]; then
 	msg=$(printf "get_config_props_value(): Error when parsing properties.")
 	if [ -n "$2" ]; then
-	    log_error 1 "$msg" "$2"
+	    log_msg -e --msg="$msg" --line="$2"
 	else
-	    log_error 1 "$msg"
+	    log_msg -e --msg="$msg"
 	fi
 	IFS="$orig_IFS"
 	return 1
@@ -936,7 +936,7 @@ get_installfile_column_values() {
     
     local column_count=1
     if [ -z "$1" ]; then
-	log_error 0 "get_column_values(): Incorrect or invalid arguments received"
+	log_msg --msg="get_column_values(): Incorrect or invalid arguments received"
 	return 1
     fi
 
@@ -944,7 +944,7 @@ get_installfile_column_values() {
     for column in $1; do
 	if [ -z "$column" ]; then
 	    msg=$(printf "get_column_values(): No value found for column %s\n" "$column_count")
-	    log_error 1 "$msg"
+	    log_msg -e --msg="$msg"
 	    return 1
 	fi
 	
@@ -970,7 +970,7 @@ get_installfile_column_values() {
     ((column_count-=1))    
     if [ "$column_count" -ne 8 ]; then
 	msg=$(printf "More than expected values for columns received for %s." "$column1_value_name")
-	log_error 1 "$msg"
+	log_msg -e --msg="$msg"
 	return 1
     fi
     return 0
@@ -1023,7 +1023,7 @@ parse_install_file() {
 	    #we are supposed to get exactly 6 words, and anything beyond or lesser
 	    # than that indicates incorrect file format
 	    if [ "$index" -ne 5 ]; then
-		log_error 1 "parse_file(): Error parsing line. Quitting." "$strict_index"
+		log_msg -e --msg="parse_file(): Error parsing line. Quitting." --line="$strict_index"
 		exit 1
 	    else
 		#if we did get the right number if words, we add in the rest of the column values
@@ -1044,7 +1044,7 @@ parse_install_file() {
 	    ((ppa_soft_array_count+=1))
 	done
     else
-	log_error 1 "parse_file(): strict_read failed."
+	log_msg -e --msg="parse_file(): strict_read failed."
 	exit 1
     fi
     return 0
@@ -1071,7 +1071,7 @@ parse_config_file(){
 	    #we are supposed to get exactly 4 words, and anything beyond or lesser
 	    # than that indicates incorrect file format
 	    if [ "$index" -ne 3 ]; then
-		log_error 1 "parse_config_file(): Error parsing line. Quitting." "$strict_index"
+		log_msg -e --msg="parse_config_file(): Error parsing line. Quitting." --line="$strict_index"
 		exit 1
 	    else
 		#if we did get the right number of words, we add in the rest of the column values
@@ -1083,7 +1083,7 @@ parse_config_file(){
 			:
 		    else
 			msg=$(printf "bash_quoting_parse failed with error:%s" "$result")
-			log_error 1 "$msg"
+			log_msg -e --msg="$msg"
 			exit 1
 		    fi
 		    if [ "$index" -eq 0 ]; then
@@ -1103,7 +1103,7 @@ parse_config_file(){
 	    ((config_array_count+=1))
 	done
     else
-	log_error 1 "parse_config_file(): strict_read failed"
+	log_msg -e --msg="parse_config_file(): strict_read failed"
 	exit 1
     fi
 }
@@ -1121,14 +1121,14 @@ main() {
     #check if the install log file exists or not
     if [ "$ALL_FLG" -ne 1 ]; then
 	if [ -z "$INSTALL_LOG_FILE" ] || ! [ -s "$INSTALL_LOG_FILE" ]; then
-	    log_error 1 "Install log file doesn't exist."
+	    log_msg -e --msg="Install log file doesn't exist."
 	    exit 1
 	fi
     fi
 
     #check if the config file exists or not
     if [ -z "$CONFIG_FILE" ] || ! [ -s "$CONFIG_FILE" ]; then
-	log_error 1 "Config file doesn't exist."
+	log_msg -e --msg="Config file doesn't exist."
 	exit 1
     else
 	: #printf "Config file is %s\n" "$CONFIG_FILE"
