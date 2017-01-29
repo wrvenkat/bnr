@@ -451,7 +451,7 @@ restore_backup_main(){
     #create the target directory to copy the files into
     file_prefix="$(dirname "$src_file_name")"
     if ! [ -d "$file_prefix" ]; then
-	result="$(mkdir -p "$file_prefix" 2>1)"
+	result="$(mkdir -p "$file_prefix" 2>&1)"
 	if [ $? -ne 0 ]; then
 	    msg="$(printf "Creating directory \"%s\" failed with error: %s" "$file_prefix" "$result")"
 	    log_msg -e --msg="$msg"
@@ -724,7 +724,7 @@ create_backup(){
 	#create the relative backup directory(ies) if it doesn't exist yet	
 	local backup_dir="$(dirname "$backup_file_name")"
 	if ! [ -d "$backup_dir" ]; then
-	    result="$(mkdir -p "$backup_dir" 2>1)"
+	    result="$(mkdir -p "$backup_dir" 2>&1)"
 	    if [ $? -ne 0 ]; then
 		msg="$(printf "Creating directory \"%s\" failed with error: %s" "$backup_dir" "$result")"
 		log_msg -e --msg="$msg"
