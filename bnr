@@ -436,7 +436,7 @@ restore_backup_main(){
 				 fi\
 				)"; then
 	
-	msg=$(printf "Backup file %s for %s not found." "$backup_file_name" "$soft")
+	msg=$(printf "Backup file \"%s\" for %s not found." "$backup_file_name" "$soft")
 	log_msg -e --msg="$msg"
 	update_config_array "$index" 6 0
 	return 1
