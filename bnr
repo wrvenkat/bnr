@@ -439,8 +439,8 @@ restore_backup_main(){
 	msg=$(printf "Backup file %s for %s not found." "$backup_file_name" "$soft")
 	log_msg -e --msg="$msg"
 	update_config_array "$index" 6 0
-	continue
-    fi    
+	return 1
+    fi
     backup_file_name="$src_file_dir"/"$file_name"
     #msg="$(printf "Backup file path is %s\n\n" "$backup_file_name")"
     #log_msg --msg="$msg"
@@ -456,7 +456,7 @@ restore_backup_main(){
 	    msg="$(printf "Creating directory \"%s\" failed with error: %s" "$file_prefix" "$result")"
 	    log_msg -e --msg="$msg"
 	    update_config_array "$index" 6 0
-	    continue
+	    return 1
 	fi
     fi
 
