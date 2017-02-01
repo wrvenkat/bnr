@@ -474,7 +474,7 @@ restore_backup_main(){
 	    update_config_array "$index" 6 1
 	    return 0
 	else
-	    msg=$(printf "Backup restore for %s failed with the following error:\n%s\n" "$result")
+	    msg="$(printf "Backup restore for %s failed with the following error: %s" "$soft" "$result")"
 	    log_msg -e --msg="$msg"
 	    update_config_array "$index" 6 0
 	    return 1
@@ -482,7 +482,7 @@ restore_backup_main(){
     fi
 
     local result=
-    local retVal=0
+    local retVal=1
     #if no script is required, we copy the backup file to the destination
     if [ "$props1_value_csudo" -eq 1 ]; then
 	#TODO: There could potential issues here when the filepath used has unescaped characters
@@ -490,8 +490,8 @@ restore_backup_main(){
 	#DONE: Fix Sudo copying
 	msg=$(printf "Executing \"sudo cp %s %s\"... " "$backup_file_name" "$src_file_name")
 	log_msg --msg="$msg"
-	result=$(sudo su -c "cp \"$backup_file_name\" \"$src_file_name\"" 2>&1)
-	retval=$?
+	result="$(sudo su -c "cp \"$backup_file_name\" \"$src_file_name\"" 2>&1)"
+	retVal=$?
     else
 	msg=$(printf "Executing \"cp %s %s\"... " "$backup_file_name" "$src_file_name")
 	log_msg --msg="$msg"
@@ -499,7 +499,8 @@ restore_backup_main(){
 	retVal=$?
     fi
     if [ "$retVal" -ne 0 ]; then
-	msg=$(printf "Copying failed with error\n%s" "$result")
+	result="$(tr -d '\n' < <(echo "$result"))"
+	msg=$(printf "Copying failed with error: %s" "$result")
 	log_msg -e --msg="$msg"
 	update_config_array "$index" 6 0
 	return 1
