@@ -1203,37 +1203,6 @@ parse_args(){
 
     local parsed_args=$(getopt -o h -l list,restore,help,backup,all,mirror,backupdir:,installlog:,configfile: -n 'backup-soft' -- "$@" 2>&1)
 
-    #an ugly way of finding if the parsing of the arguments went through successfully
-    local line_count=$(echo "$parsed_args" | wc -l)
-    local index=1
-    #if we have more than 1 line then one must be the failure
-    if [ $line_count -gt 1 ] || [ -z "$parsed_args" ]; then
-	if [ $line_count -gt 1 ]; then
-	    while read line; do
-		if [ $index -eq 1 ]; then
-		    printf "%s\n" "$line"
-		    ((index+=1))
-		    break
-		fi
-	    done < <(echo "$parsed_args")
-	else
-	    printf "Invalid arguments received. Use -h or --help to see usage.\n"
-	fi
-	exit 0
-    fi
-    
-    #remove leading space(s).
-    local new_args=
-    index=1
-    for i in $parsed_args; do
-	if [ $index -eq 1 ]; then
-	    new_args=$i
-	    ((index+=1))
-	else
-	    new_args+=" $i"
-	fi
-    done
-
     #remove any new-line chars
     parsed_args="$(tr -d '\n' < <(echo "$parsed_args"))"
     parsed_args="$new_args"
