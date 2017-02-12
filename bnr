@@ -961,6 +961,7 @@ sort_config_array(){
     local index2=
     local actual_index=
     while read sorted_line; do
+	printf "Sorted line is %s\n" "$sorted_line"
 	index2=1
 	for word in $sorted_line; do
 	    if [ "$index2" -eq 2 ]; then
