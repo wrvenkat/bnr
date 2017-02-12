@@ -1253,15 +1253,6 @@ main() {
 	printf "\n"
 	restore_backup
     fi
-
-    #create log
-    if [ "$BACKUP_FLG" -eq 1 ] || [ "$RESTORE_FLG" -eq 1 ]; then
-	create_log 1 > "$SUCCESS_LOG_FILE"
-	local fail_log=$(create_log 0)
-	if [ -n "$fail_log" ]; then
-	    echo "$fail_log" > "$FAILED_LOG_FILE"
-	fi
-    fi
 }
 
 
