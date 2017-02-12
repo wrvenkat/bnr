@@ -934,6 +934,45 @@ print_ppa_soft_array() {
     done
 }
 
+#sorts the config array based on the first column value
+sort_config_array(){
+    local index=0
+    declare -a local_config_array
+    #create a local copy of the config array
+    for index in "{!config_array[@]}"; do
+	local_config_array="${config_array[$index]}"
+    done
+
+    #create an array where each entry is the first column
+    #and the index of it in config_array
+    local msg=
+    for index in "${!config_array[@]}"; do
+	msg+="$(printf "%s %s\n" "${config_array[$index]}" "$index")"
+    done
+
+    #sort this array and update config_array based
+    #on the order in which it appears
+    local sorted_line
+    local index1=0
+    local index2=
+    local word=
+    local actual_index=
+    while read sorted_line; do
+	index2=1
+	for word in $sorted_line; do
+	    if [ "$index2" -eq 2 ]; then
+		actual_index="$word"
+		config_array[$index1]="${local_config_array[$actual_index]}"
+		((index1+=1))
+	    fi
+	    ((index2+=1))
+	done
+    done < <(echo "$msg" | sort)
+
+    print_ppa_config_array
+    exit 1
+}
+
 column1_length_max=0
 column2_length_max=0
 column3_length_max=0
