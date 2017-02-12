@@ -39,7 +39,7 @@ config_array_count=0
 SEARCH_INDEX_1=
 SEARCH_INDEX_2=
 
-if ! source "/bash_helper_scripts/logger.sh"; then
+if ! source "bash_helper_scripts/logger.sh"; then
     printf "Failed to load logger. Exiting\n"
     exit 1
 fi
@@ -365,8 +365,8 @@ restore_backup_main(){
 	fi
 
 	#safely expand file path
-	#./../bash_helper_scripts/safe_tilde_expansion.sh "$src_file_filename" 1
-	if result=$(/bash_helper_scripts/safe_tilde_expansion.sh\
+	#./..bash_helper_scripts/safe_tilde_expansion.sh "$src_file_filename" 1
+	if result=$(bash_helper_scripts/safe_tilde_expansion.sh\
 			"$src_file_name" 1); then
 	    #get the prefix, the expanded prefix and the expanded file path
 	    local str=
@@ -410,7 +410,7 @@ restore_backup_main(){
 	    elif [ "$tilde_expanded" -eq 0 ]; then
 		#we also try to remove direct references to values that would've been same as
 		#a tilde expansion from the given source file name
-		expanded_tilde_prefix="$(/bash_helper_scripts/safe_tilde_expansion.sh "~")"
+		expanded_tilde_prefix="$(bash_helper_scripts/safe_tilde_expansion.sh "~")"
 		#if the src_file_name is relative to /, then we get the rest of the path to make
 		#it relative to the backup dir
 		local allbutfirst="${src_file_name#?}"
@@ -645,8 +645,8 @@ create_backup(){
 	    fi
 	    
 	    #safely expand file path
-	    #../bash_helper_scripts/safe_tilde_expansion.sh "$raw_path" 1
-	    if result=$(/bash_helper_scripts/safe_tilde_expansion.sh\
+	    #..bash_helper_scripts/safe_tilde_expansion.sh "$raw_path" 1
+	    if result=$(bash_helper_scripts/safe_tilde_expansion.sh\
 			    "$raw_path" 1); then
 		#get the prefix, the expanded prefix and the expanded file path
 		local str=
@@ -711,7 +711,7 @@ create_backup(){
 		elif [ "$tilde_expanded" -eq 0 ]; then
 		    #we also try to remove direct references to values that would've been same as
 		    #a tilde expansion from the given source file name
-		    expanded_tilde_prefix="$(/bash_helper_scripts/safe_tilde_expansion.sh "~")"
+		    expanded_tilde_prefix="$(bash_helper_scripts/safe_tilde_expansion.sh "~")"
 		    #if the src_file_name is relative to /, then we get the rest of the path to make
 		    #it relative to the backup dir
 		    local allbutfirst="${src_file_name#?}"
@@ -1221,9 +1221,9 @@ main() {
     fi
 
     #source in the strict_read file for use later
-    source "/bash_helper_scripts/strict_read.sh"
+    source "bash_helper_scripts/strict_read.sh"
     #source in bash_quoting_parsing
-    source "/bash_helper_scripts/bash_quoting_parsing.sh"
+    source "bash_helper_scripts/bash_quoting_parsing.sh"
     
     #parse the file(s)
     if [ "$ALL_FLG" -ne 1 ]; then
