@@ -951,7 +951,8 @@ sort_config_array(){
 	for word in ${config_array[$index]}; do
 	    break
 	done
-	msg+="$(printf "%s %s" "$word" "$index")$'\n'"
+	msg+="$(printf "%s %s\n" "$word" "$index")"
+	printf "Msg1 is:%s-" "$msg"
     done
     printf "Msg is %s\n" "$msg"
 
