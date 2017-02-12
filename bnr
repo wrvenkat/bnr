@@ -952,6 +952,7 @@ sort_config_array(){
 	    break
 	done
 	msg+="$(printf "%s %s\n" "$word" "$index")"
+	printf "Msg is %s\n" "$msg"
     done
 
     #sort this array and update config_array based
