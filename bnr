@@ -1024,7 +1024,7 @@ print_ppa_soft_array() {
 	if [ "$ppa_comments" != "!" ]; then
 	    ppa_comments="MSG"
 	fi
-	if get_install_file_column_values "$array_content"; then
+	if get_installfile_column_values "$array_content"; then
 	    if [ $header -eq 0 ]; then
 		printf "%-*s %-*s %-*s %-*s %-*s %-*s %s\n" "$column1_length_max" "Name" "$column2_length_max" "ProgName" "$column3_length_max" "PPA" "$column4_length_max" "TOI" "$props_col_len" "Property" "$lineno_col_len" "$lineno_str" "Comments"
 		header=1
