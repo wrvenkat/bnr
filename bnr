@@ -39,49 +39,54 @@ config_array_count=0
 SEARCH_INDEX_1=
 SEARCH_INDEX_2=
 
-if ! source "../bash_helper_scripts/logger.sh"; then
+if ! source "/bash_helper_scripts/logger.sh"; then
     printf "Failed to load logger. Exiting\n"
     exit 1
 fi
 
 #this function prints the config_array for successful/unsuccessfull restore or backup in the
 #same original file format
-# takes one argument
+# takes three arguments
 # 1 - 0 for failure only and 1 for successful installation only
+# 2 - whether to log or print to console
+# 3 - the index into the config_array
 create_log() {
     local index=0
     local msg=
     local array_content=
     local msg=
     local success=
-    local local_success=0
-    local ppa_comments=
+    local console=1
 
     if [ -n "$1" ]; then
 	success="$1"
     else
-	success=-1
+	success=0
+    fi
+
+    if [ -n "$2" ]; then
+	console="$2"
+    fi
+
+    if [ -n "$3" ]; then
+	index="$3"
+    else
+	return 1
     fi
     
-    while [ $index -lt $config_array_count ]; do
-	array_content=${config_array[$index]}
-	if get_configfile_column_values "$array_content"; then
-	    if [ "$column6_value_cstatus" -eq "$success" ] || [ "$success" -eq 255 ]; then
-		local_success=1
+    array_content="${config_array[$index]}"
+    if get_configfile_column_values "$array_content"; then
+	msg="$(printf "%-*s %-*s %-*s %-*s" "$column1_value_max_len" "$column1_value_cname" "$column2_value_max_len" "$column2_value_cfilename" "$column3_value_max_len" "$column3_value_cprops" "$column4_value_max_len" "$column4_value_cconfig_filename")"
+	if [ "$console" -eq 1 ]; then
+	    printf "%s\n" "$msg"
+	else
+	    if [ "$success" -eq 1 ]; then
+		printf "%s\n" "$msg" >> "$SUCCESS_LOG_FILE"
 	    else
-		local_success=0
-	    fi	   
-
-	    if [ "$local_success" -eq 1 ]; then
-		if [ $index -eq 0 ]; then
-		    msg+="$(printf "#ProgramName ConfigFileName Props LocationFileName")\n"
-		fi
-		msg+="$(printf "%s %s %s %s" "$column1_value_cname" "$column2_value_cfilename" "$column3_value_cprops" "$column4_value_cconfig_filename")\n"
+		printf "%s\n" "$msg" >> "$FAILED_LOG_FILE"
 	    fi
 	fi
-	((index+=1))
-    done
-    printf "$msg" | column -t
+    fi
 }
 
 #this function updated the provided index in the config_array
@@ -354,14 +359,14 @@ restore_backup_main(){
 	if bash_quoting_parse "$src_file_name"; then
 	    parsed_file_path="$quoting_parsed_string"
 	else
-	    msg=$(printf "bash_quoting_parse failed with error:%s" "$result")
+	    msg=$(printf "bash_quoting_parse failed with error:%s" "$src_file_name")
 	    log_msg -e --msg="$msg"
 	    exit 1
 	fi
-		
+
 	#safely expand file path
 	#./../bash_helper_scripts/safe_tilde_expansion.sh "$src_file_filename" 1
-	if result=$(../bash_helper_scripts/safe_tilde_expansion.sh\
+	if result=$(/bash_helper_scripts/safe_tilde_expansion.sh\
 			"$src_file_name" 1); then
 	    #get the prefix, the expanded prefix and the expanded file path
 	    local str=
@@ -405,7 +410,7 @@ restore_backup_main(){
 	    elif [ "$tilde_expanded" -eq 0 ]; then
 		#we also try to remove direct references to values that would've been same as
 		#a tilde expansion from the given source file name
-		expanded_tilde_prefix="$(../bash_helper_scripts/safe_tilde_expansion.sh "~")"
+		expanded_tilde_prefix="$(/bash_helper_scripts/safe_tilde_expansion.sh "~")"
 		#if the src_file_name is relative to /, then we get the rest of the path to make
 		#it relative to the backup dir
 		local allbutfirst="${src_file_name#?}"
@@ -438,7 +443,8 @@ restore_backup_main(){
 	
 	msg=$(printf "Backup file \"%s\" for %s not found." "$backup_file_name" "$soft")
 	log_msg -e --msg="$msg"
-	update_config_array "$index" 6 0
+	#update_config_array "$index" 6 0
+	create_log 0 0 "$index"
 	return 1
     fi
     backup_file_name="$src_file_dir"/"$file_name"
@@ -455,7 +461,8 @@ restore_backup_main(){
 	if [ $? -ne 0 ]; then
 	    msg="$(printf "Creating directory \"%s\" failed with error: %s" "$file_prefix" "$result")"
 	    log_msg -e --msg="$msg"
-	    update_config_array "$index" 6 0
+	    #update_config_array "$index" 6 0
+	    create_log 0 0 "$index"
 	    return 1
 	fi
     fi
@@ -471,12 +478,14 @@ restore_backup_main(){
 	result=$(call_script "$soft" "$backup_file_name" "$src_file_name" 1 2>&1)
 	retVal=$?
 	if [ "$retVal" -eq 0 ]; then
-	    update_config_array "$index" 6 1
+	    #update_config_array "$index" 6 1
+	    create_log 1 0 "$index"
 	    return 0
 	else
 	    msg="$(printf "Backup restore for %s failed with the following error: %s" "$soft" "$result")"
 	    log_msg -e --msg="$msg"
-	    update_config_array "$index" 6 0
+	    #update_config_array "$index" 6 0
+	    create_log 0 0 "$index"
 	    return 1
 	fi
     fi
@@ -502,10 +511,12 @@ restore_backup_main(){
 	result="$(tr -d '\n' < <(echo "$result"))"
 	msg=$(printf "Copying failed with error: %s" "$result")
 	log_msg -e --msg="$msg"
-	update_config_array "$index" 6 0
+	#update_config_array "$index" 6 0
+	create_log 0 0 "$index"
 	return 1
     else
-	update_config_array "$index" 6 1
+	#update_config_array "$index" 6 1
+	create_log 1 0 "$index"
     fi
     return 0
 }
@@ -635,7 +646,7 @@ create_backup(){
 	    
 	    #safely expand file path
 	    #../bash_helper_scripts/safe_tilde_expansion.sh "$raw_path" 1
-	    if result=$(../bash_helper_scripts/safe_tilde_expansion.sh\
+	    if result=$(/bash_helper_scripts/safe_tilde_expansion.sh\
 			    "$raw_path" 1); then
 		#get the prefix, the expanded prefix and the expanded file path
 		local str=
@@ -669,7 +680,8 @@ create_backup(){
 		#\ || ! (cd -P "$unexpanded_file_prefix"); then
 		msg=$(printf "Source file %s for %s not found." "$parsed_file_path" "$soft")
 		log_msg --msg="$msg"
-		update_config_array "$index" 6 0
+		#update_config_array "$index" 6 0
+		create_log 0 0 "$index"
 		continue
 	    fi
 	    #printf "Parsed_file_dir: %s\n" "$src_file_dir"
@@ -699,7 +711,7 @@ create_backup(){
 		elif [ "$tilde_expanded" -eq 0 ]; then
 		    #we also try to remove direct references to values that would've been same as
 		    #a tilde expansion from the given source file name
-		    expanded_tilde_prefix="$(../bash_helper_scripts/safe_tilde_expansion.sh "~")"
+		    expanded_tilde_prefix="$(/bash_helper_scripts/safe_tilde_expansion.sh "~")"
 		    #if the src_file_name is relative to /, then we get the rest of the path to make
 		    #it relative to the backup dir
 		    local allbutfirst="${src_file_name#?}"
@@ -729,7 +741,8 @@ create_backup(){
 	    if [ $? -ne 0 ]; then
 		msg="$(printf "Creating directory \"%s\" failed with error: %s" "$backup_dir" "$result")"
 		log_msg -e --msg="$msg"
-		update_config_array "$index" 6 0
+		#update_config_array "$index" 6 0
+		create_log 0 0 "$index"
 		continue
 	    fi
 	fi
@@ -747,11 +760,13 @@ create_backup(){
 	    retVal=$?
 	    #printf "Retval is %s and restul is %s\n" "$retVal" "$result"
 	    if [ "$retVal" -eq 1 ]; then
-		update_config_array "$index" 6 0
+		#update_config_array "$index" 6 0
 		msg=$(printf "Creating backup for %s failed with the following error: \n%s" "$soft" "$result")
 		log_msg -e --msg="$msg"
+		create_log 0 0 "$index"
 	    else
-		update_config_array "$index" 6 1
+		#update_config_array "$index" 6 1
+		create_log 1 0 "$index"
 	    fi
 	else
 	    #create the backup
@@ -762,9 +777,11 @@ create_backup(){
 	    if [ "$retVal" -ne 0 ]; then
 		msg=$(printf "Error copying \"%s\" to \"%s\"." "$src_file_name" "$backup_file_name")
 		log_msg -e --msg="$msg"
-		update_config_array "$index" 6 0
+		#update_config_array "$index" 6 0
+		create_log 0 0 "$index"
 	    else
-		update_config_array "$index" 6 1	    
+		#update_config_array "$index" 6 1
+		create_log 1 0 "$index"
 	    fi
 	fi
     done
@@ -782,6 +799,12 @@ column3_value_cprops=
 column4_value_cconfig_filename=
 column5_value_clineno=
 column6_value_cstatus=
+
+#the length
+column1_value_max_len=0
+column2_value_max_len=0
+column3_value_max_len=0
+column4_value_max_len=0
 
 get_configfile_column_values() {
     local msg=
@@ -888,30 +911,9 @@ get_config_props_values() {
 #this function prints the config_array
 print_config_array() {
     local index=0
-    local msg=
-    local array_content=
-    local msg=
-    local flg=0
     for index in ${!config_array[@]}; do
-	array_content=${config_array[$index]}
-	if [ -z "$array_content" ]; then
-	    continue;
-	fi
-	if [ $flg -eq 0 ]; then
-	    msg+="$(printf "Name\tConfigFileName\tProperty\tConfigFileName\tLineNo\tStatus")\n"
-	    flg=1
-	fi
-	if get_configfile_column_values "$array_content" 1; then
-	    if printf_proof "$column4_value_cconfig_filename"; then
-		column4_value_cconfig_filename="$printf_proof_str"
-	    fi
-	    if printf_proof "$column2_value_cfilename"; then
-		column2_value_cfilename="$printf_proof_str"
-	    fi
-	    msg+="$(printf "%s\t%s\t%s\t%s\t%s\t%s\n" "$column1_value_cname" "$column2_value_cfilename" "$column3_value_cprops" "$column4_value_cconfig_filename" "$column5_value_clineno" "$column6_value_cstatus")\n"	    
-	fi
+	create_log 0 1 "$index"
     done
-    printf "$msg" | column -t -s $'\t'
 }
 
 #this function retrieves the column value from the give ppa_line and saves it in the variable columnx_value where x ranges from 1 to 8
@@ -927,6 +929,11 @@ column6_value_lineno=
 column7_value_ppastatus=
 column8_value_installstatus=
 
+#the raW version
+column1_value_name_raw=
+column2_value_progname_raw=
+column3_value_ppa_raw=
+column4_value_toi_raw=
 get_installfile_column_values() {
     #initialize
     column1_value_name=
@@ -937,6 +944,7 @@ get_installfile_column_values() {
     column6_value_lineno=
     column7_value_ppastatus=
     column8_value_installstatus=
+    local column_raw=
     
     local column_count=1
     if [ -z "$1" ]; then
@@ -951,15 +959,28 @@ get_installfile_column_values() {
 	    log_msg -e --msg="$msg"
 	    return 1
 	fi
+
+	column_raw="$column"
+	if bash_quoting_parse "$column"; then
+	    column="$quoting_parsed_string"
+	else
+	    msg=$(printf "bash_quoting_parse failed with error:%s" "${strict_line[$index]}")
+	    log_msg -e --msg="$msg"
+	    exit 1
+	fi
 	
 	if [ $column_count -eq 1 ]; then
 	    column1_value_name="$column"
+	    column1_value_name_raw="$column_raw"
 	elif [ $column_count -eq 2 ]; then
-	    column2_value_progname="$column"	
+	    column2_value_progname="$column"
+	    column2_value_progname_raw="$column_raw"
 	elif [ $column_count -eq 3 ]; then
 	    column3_value_ppa="$column"
+	    column3_value_ppa_raw="$column_raw"
 	elif [ $column_count -eq 4 ]; then
 	    column4_value_toi="$column"
+	    column4_value_toi_raw="$column_raw"
 	elif [ $column_count -eq 5 ]; then
 	    column5_value_props="$column"
 	elif [ $column_count -eq 6 ]; then
@@ -988,30 +1009,39 @@ print_ppa_soft_array() {
     local msg=
     local header=0
     local ppa_comments=
+    local props_col_len=12
+    local lineno_str="LineNo"
+    local lineno_col_len="${#lineno_str}"
+
     for index in "${!ppa_soft_array[@]}"; do
 	array_content="${ppa_soft_array[$index]}"
 	if [ -z "$array_content" ]; then
-	    printf "Array entry %s is empty\n" "$index"
+	    msg="$(printf "Array entry %s is empty\n" "$index")"
+	    log_msg -e --msg="$msg"
 	    continue;
 	fi
 	ppa_comments="${ppa_soft_array_msg[$index]}"
 	if [ "$ppa_comments" != "!" ]; then
 	    ppa_comments="MSG"
 	fi
-	if get_installfile_column_values "$array_content"; then
+	if get_column_values "$array_content"; then
 	    if [ $header -eq 0 ]; then
-		msg+="$(printf "Name ProgName PPA TOI Property LineNo Comments")\n"
+		printf "%-*s %-*s %-*s %-*s %-*s %-*s %s\n" "$column1_length_max" "Name" "$column2_length_max" "ProgName" "$column3_length_max" "PPA" "$column4_length_max" "TOI" "$props_col_len" "Property" "$lineno_col_len" "$lineno_str" "Comments"
 		header=1
 	    fi
-	    msg+="$(printf "%s %s %s %s %s %s %s\n" "$column1_value_name" "$column2_value_progname" "$column3_value_ppa" "$column4_value_toi" "$column5_value_props" "$column6_value_lineno" "$ppa_comments")\n"
+	    printf "%-*s %-*s %-*s %-*s %-*s %-*s %s\n" "$column1_length_max" "$column1_value_name_raw" "$column2_length_max" "$column2_value_progname_raw" "$column3_length_max" "$column3_value_ppa_raw" "$column4_length_max" "$column4_value_toi_raw" "$props_col_len" "$column5_value_props" "$lineno_col_len" "$column6_value_lineno" "$ppa_comments"
 	fi
     done
-    printf "$msg" | column -t
 }
+
+column1_length_max=0
+column2_length_max=0
+column3_length_max=0
+column4_length_max=0
 
 #function to parse the installed-log file
 parse_install_file() {
-    if strict_read --field="\t,\s" --group='"' --line="\n" --comment="#" < "$INSTALL_LOG_FILE"; then
+    if strict_read --field="\t,\s" --group='"' --line="\n" --comment="#" --esc < "$PPALIST_FILE"; then
 	while strict_get; do
 	    #if the line is not empty
 	    if [ -z "$strict_line" ]; then
@@ -1020,32 +1050,78 @@ parse_install_file() {
 	    local msg=
 	    local index=
 	    local comments=
+	    local acc_val=
 	    #count the number of words we obtained
 	    for index in "${!strict_line[@]}"; do
 		:
+		if [ "$index" -eq 5 ]; then
+		    acc_val+="$(printf "%s" "${strict_line[$index]}")"
+		else
+		    acc_val+="$(printf "%s " "${strict_line[$index]}")"
+		fi
 	    done
 	    #we are supposed to get exactly 6 words, and anything beyond or lesser
 	    # than that indicates incorrect file format
 	    if [ "$index" -ne 5 ]; then
-		log_msg -e --msg="parse_file(): Error parsing line. Quitting." --line="$strict_index"
+		msg="$(printf "parse_file(): Error parsing file. Quitting. Line:%s\n" "$acc_val")"
+		log_msg -e --msg="$msg" -l "$strict_index"
 		exit 1
 	    else
 		#if we did get the right number if words, we add in the rest of the column values
+		local curr_elem_len=0
 		for index in "${!strict_line[@]}"; do
-		    if [ "$index" -eq 0 ]; then
-			msg+=$(printf "%s" "${strict_line[$index]}")
-		    elif [ "$index" -eq 5 ]; then
-			msg+=$(printf " %s 0 0" "$strict_index")
-			#column 5 is the comments which is saved in a separate array but indexed
-			#with the same index number
-			comments=$(printf "%s" "${strict_line[$index]}")
-		    else
-			msg+=$(printf " %s" "${strict_line[$index]}")
-		    fi			
+		    #printf "Line is %s\n" "${strict_line[*]}"
+		    #printf "asdasdasdasd: %s\n" "${strict_line[$index]}"
+		    curr_elem_len="${#strict_line[$index]}"
+		    local result="$(bash_quoting_parse "${strict_line[$index]}" 2>&1)"
+		    local retVal=$?
+		    if [ "$retVal" -ne 0 ]; then
+			msg=$(printf "bash_quoting_parse failed with error:%s" "$result")
+			log_msg -e --msg="$msg"
+			exit 1
+		    fi
+		    case $index in
+			0) if [ $column1_length_max -lt $curr_elem_len ]; then
+			       column1_length_max=$curr_elem_len
+			   fi
+			   msg+=$(printf "%s " "${strict_line[$index]}");;
+			1) if [ $column2_length_max -lt $curr_elem_len ]; then
+			       column2_length_max=$curr_elem_len
+			   fi
+			   msg+=$(printf "%s " "${strict_line[$index]}");;
+			2) if [ $column3_length_max -lt $curr_elem_len ]; then
+			       column3_length_max=$curr_elem_len
+			   fi
+			   msg+=$(printf "%s " "${strict_line[$index]}");;
+			3) if [ $column4_length_max -lt $curr_elem_len ]; then
+			       column4_length_max=$curr_elem_len
+			   fi
+			   msg+=$(printf "%s " "${strict_line[$index]}");;
+			4) msg+=$(printf "%s " "${strict_line[$index]}");;
+			5) msg+=$(printf "%s 0 0" "$strict_index")
+			   #column 5 is the comments which is saved in a separate array but indexed
+			   #with the same index number
+			   comments=$(printf "%s" "${strict_line[$index]}");;
+			*) msg="$(printf "parse_file(): Error parsing file. Quitting. Line:%s\n" "$acc_val")"
+			   log_msg -e --msg="$msg" -l "$strict_index";
+			   exit 1;;
+		    esac		
 		done
 	    fi
-	    ppa_soft_array[$ppa_soft_array_count]="$msg"
-	    ((ppa_soft_array_count+=1))
+	    #printf "Msg: %s\n" "$msg"
+	    #printf "Comments: %s\n" "$comments"
+	    #add this line only if it is of the same type as the ones provided
+	    if get_column_values "$msg"; then
+		#export the TYPE_ARGS array
+		export TYPE_ARGS
+		#we check the condition in a sub-shell because
+		#otherwise it'd interfere with our strict_read
+		if (is_same_type "$column4_value_toi"); then
+		    ppa_soft_array[$ppa_soft_array_count]="$msg"
+		    ppa_soft_array_msg[$ppa_soft_array_count]="$comments"
+		    ((ppa_soft_array_count+=1))
+		fi
+	    fi
 	done
     else
 	log_msg -e --msg="parse_file(): strict_read failed."
@@ -1071,38 +1147,44 @@ parse_config_file(){
 		#printf "Word %s is %s\n" "$index" "${strict_line[$index]}"
 		:
 	    done
-	    #printf "Line is %s and index is %s\n" "${strict_line[*]}" "$index"
-	    #we are supposed to get exactly 4 words, and anything beyond or lesser
-	    # than that indicates incorrect file format
-	    if [ "$index" -ne 3 ]; then
-		log_msg -e --msg="parse_config_file(): Error parsing line. Quitting." --line="$strict_index"
-		exit 1
-	    else
-		#if we did get the right number of words, we add in the rest of the column values
-		#which is the line number and status
-		#printf "MSG: Unparsed line is %s\n" "$strict_unparsed_line"
-		for index in "${!strict_line[@]}"; do
-		    local val="${strict_line[$index]}"		    
-		    if result=$(bash_quoting_parse "$val"); then
-			:
-		    else
-			msg=$(printf "bash_quoting_parse failed with error:%s" "$result")
-			log_msg -e --msg="$msg"
-			exit 1
-		    fi
-		    if [ "$index" -eq 0 ]; then
-			msg+=$(printf "%s" "${strict_line[$index]}")
-		    elif [ "$index" -eq 1 ] || [ "$index" -eq 3 ]; then
-			msg+=$(printf " %s" "${strict_line[$index]}")
-			if [ "$index" -eq 3 ]; then
-			    msg+=$(printf " %s 0" "$strict_index")
-			fi
-		    else
-			msg+=$(printf " %s" "${strict_line[$index]}")
-		    fi			
-		done
-	    fi
-	    #printf "Msg: %s\n" "$msg"
+	    #printf "Line is %s and index is %s\n" "${strict_line[*]}" "$index"	    
+	    #printf "MSG: Unparsed line is %s\n" "$strict_unparsed_line"
+
+	    #we're supposed to get exactly 4 columns/words
+	    for index in "${!strict_line[@]}"; do
+		local val="${strict_line[$index]}"
+		local curr_elem_len="${#strict_line[$index]}"
+		
+		if result=$(bash_quoting_parse "$val"); then
+		    :
+		else
+		    msg=$(printf "bash_quoting_parse failed with error:%s" "$result")
+		    log_msg -e --msg="$msg"
+		    exit 1
+		fi
+
+		#see if we received the right number of words and measure the length
+		case $index in
+		    0) if [ "$column1_value_max_len" -lt "$curr_elem_len" ]; then
+			   column1_value_max_len="$curr_elem_len"
+		       fi
+		       msg+=$(printf "%s " "${strict_line[$index]}");;
+		    1) if [ "$column2_value_max_len" -lt "$curr_elem_len" ]; then
+			   column2_value_max_len="$curr_elem_len"
+		       fi
+		       msg+=$(printf "%s " "${strict_line[$index]}");;
+		    2) if [ "$column3_value_max_len" -lt "$curr_elem_len" ]; then
+			   column3_value_max_len="$curr_elem_len"
+		       fi
+		       msg+=$(printf "%s " "${strict_line[$index]}");;
+		    3) if [ "$column4_value_max_len" -lt "$curr_elem_len" ]; then
+			   column4_value_max_len="$curr_elem_len"
+		       fi
+		       msg+=$(printf "%s %s 0" "${strict_line[$index]}" "$strict_index");;
+		    *) log_msg -e --msg="parse_config_file(): Error parsing line. Quitting." --line="$strict_index"
+		       exit 1;;
+		esac
+	    done
 	    config_array[$config_array_count]="$msg"
 	    ((config_array_count+=1))
 	done
@@ -1139,9 +1221,9 @@ main() {
     fi
 
     #source in the strict_read file for use later
-    source "../bash_helper_scripts/strict_read.sh"
+    source "/bash_helper_scripts/strict_read.sh"
     #source in bash_quoting_parsing
-    source "../bash_helper_scripts/bash_quoting_parsing.sh"
+    source "/bash_helper_scripts/bash_quoting_parsing.sh"
     
     #parse the file(s)
     if [ "$ALL_FLG" -ne 1 ]; then
