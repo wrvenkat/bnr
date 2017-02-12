@@ -1101,6 +1101,7 @@ parse_config_file(){
 	log_msg -e --msg="parse_config_file(): strict_read failed"
 	exit 1
     fi
+    sort_config_array
 }
 
 main() {
