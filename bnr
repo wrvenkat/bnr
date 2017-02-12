@@ -952,9 +952,9 @@ sort_config_array(){
 	    break
 	done
 	msg+="$(printf "%s %s" "$word" "$index")"$'\n'
-	printf "Msg1 is:%s-" "$msg"
+	#printf "Msg1 is:%s-" "$msg"
     done
-    printf "Msg is %s\n" "$msg"
+    #printf "Msg is %s\n" "$msg"
 
     #sort this array and update config_array based
     #on the order in which it appears
@@ -975,7 +975,7 @@ sort_config_array(){
 	done
     done < <(echo "$msg" | sort)
 
-    print_ppa_config_array
+    print_config_array
     exit 1
 }
 
