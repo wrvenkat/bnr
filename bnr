@@ -215,7 +215,7 @@ call_script(){
     src_file_name="$3"
 
     if ! [ -d "$BACKUP_SCRIPTS_DIR" ]; then
-	log_msg -e --msg="Backup scripts directory not present."
+	log_msg -e --msg="Backup scriptsdirectory not present."
 	return 1
     fi
 
@@ -398,14 +398,10 @@ restore_backup_main(){
     #if it requires a special script for creating a backup
     if [ "$props2_value_cscript" -eq 1 ]; then
 	#call the script
-	result=$(call_script "$soft" "$backup_file_name" "$src_file_name" 1 2>&1)
-	retVal=$?
-	if [ "$retVal" -eq 0 ]; then
+	if call_script "$soft" "$backup_file_name" "$src_file_name" 1; then
 	    create_log 1 0 "$index"
 	    return 0
 	else
-	    msg="$(printf "Backup restore for %s failed with the following error: %s" "$soft" "$result")"
-	    log_msg -e --msg="$msg"
 	    create_log 0 0 "$index"
 	    return 1
 	fi
@@ -673,12 +669,7 @@ create_backup(){
 	#if it requires a special script for creating a backup
 	if [ "$props2_value_cscript" -eq 1 ]; then
 	    #call the script
-	    result=$(call_script "$soft" "$backup_file_name" "$src_file_name" 0 2>&1)
-	    retVal=$?
-	    #printf "Retval is %s and restul is %s\n" "$retVal" "$result"
-	    if [ "$retVal" -eq 1 ]; then
-		msg=$(printf "Creating backup for %s failed with the following error: \n%s" "$soft" "$result")
-		log_msg -e --msg="$msg"
+	    if ! call_script "$soft" "$backup_file_name" "$src_file_name" 0; then
 		create_log 0 0 "$index"
 	    else
 		create_log 1 0 "$index"
