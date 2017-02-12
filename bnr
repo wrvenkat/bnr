@@ -946,8 +946,12 @@ sort_config_array(){
     #create an array where each entry is the first column
     #and the index of it in config_array
     local msg=
+    local word=
     for index in "${!config_array[@]}"; do
-	msg+="$(printf "%s %s\n" "${config_array[$index]}" "$index")"
+	for word in ${config_array[$index]}; do
+	    break
+	done
+	msg+="$(printf "%s %s\n" "$word" "$index")"
     done
 
     #sort this array and update config_array based
@@ -955,7 +959,6 @@ sort_config_array(){
     local sorted_line
     local index1=0
     local index2=
-    local word=
     local actual_index=
     while read sorted_line; do
 	index2=1
