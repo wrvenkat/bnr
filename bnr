@@ -1108,20 +1108,9 @@ parse_install_file() {
 		    esac		
 		done
 	    fi
-	    #printf "Msg: %s\n" "$msg"
-	    #printf "Comments: %s\n" "$comments"
-	    #add this line only if it is of the same type as the ones provided
-	    if get_installfile_column_values "$msg"; then
-		#export the TYPE_ARGS array
-		export TYPE_ARGS
-		#we check the condition in a sub-shell because
-		#otherwise it'd interfere with our strict_read
-		if (is_same_type "$column4_value_toi"); then
-		    ppa_soft_array[$ppa_soft_array_count]="$msg"
-		    ppa_soft_array_msg[$ppa_soft_array_count]="$comments"
-		    ((ppa_soft_array_count+=1))
-		fi
-	    fi
+	    ppa_soft_array[$ppa_soft_array_count]="$msg"
+	    ppa_soft_array_msg[$ppa_soft_array_count]="$comments"
+	    ((ppa_soft_array_count+=1))
 	done
     else
 	log_msg -e --msg="parse_file(): strict_read failed."
