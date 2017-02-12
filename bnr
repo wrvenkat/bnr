@@ -951,7 +951,7 @@ sort_config_array(){
 	for word in ${config_array[$index]}; do
 	    break
 	done
-	msg+="$(printf "%s %s\n" "$word" "$index")"
+	msg+="$(printf "%s %s" "$word" "$index")\n"
     done
 
     #sort this array and update config_array based
