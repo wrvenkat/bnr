@@ -39,7 +39,7 @@ config_array_count=0
 SEARCH_INDEX_1=
 SEARCH_INDEX_2=
 
-if ! source "/bash_helper_scripts/logger.sh"; then
+if ! source "bash_helper_scripts/logger.sh"; then
     printf "Failed to load logger. Exiting\n"
     exit 1
 fi
@@ -88,81 +88,6 @@ create_log() {
 	fi
     fi
 }
-
-#this function updated the provided index in the config_array
-#accepts 3 arguments,
-#1 - the index into the array
-#2 - the column number
-#3 - the value to replace it with
-update_config_array(){
-    if [ -z "$1" ] || [ -z "$1" ] || [ -z "$1" ]; then
-	log_msg -e --msg="update_config_array(): Invalid number of arguments received."
-	return 1
-    fi
-
-    local index=
-    local column_no=
-    local value=
-    local msg=
-
-    index="$1"
-    column_no="$2"
-    value="$3"
-
-    if [ $column_no -eq 1 ]; then
-	column1_value_cname="$value"
-    elif [ $column_no -eq 2 ]; then
-	column2_value_cfilename="$value"	
-    elif [ $column_no -eq 3 ]; then
-	column3_value_cprops="$value"
-    elif [ $column_no -eq 4 ]; then
-	column4_value_cconfig_filename="$value"
-    elif [ $column_no -eq 5 ]; then
-	column5_value_clineno="$value"
-    elif [ $column_no -eq 6 ]; then
-	column6_value_cstatus="$value"
-    else
-	log_msg -e --msg="update_config_array(): Invalid column number received."
-	return 1
-    fi
-    
-    msg=$(printf "%s %s %s %s %s %s" "$column1_value_cname" "$column2_value_cfilename" "$column3_value_cprops" "$column4_value_cconfig_filename" "$column5_value_clineno" "$column6_value_cstatus")
-    #printf "MSG is %s for index %s\n" "$msg" "$index"
-    config_array["$index"]="$msg"
-
-    return 0
-}
-
-
-#Makes printf proof by replacing any % occurences with %%
-printf_proof_str=
-printf_proof(){
-    if [ -z "$1" ]; then
-	return 1;
-    fi
-
-    local char=
-    local word=
-    printf_proof_str=
-    #this is done to prevent read ignoring leading and trailing IFS characters
-    local orig_IFS="$IFS"
-    IFS=
-    #read raw input one character at a time
-    while read -r -N 1 char; do
-	if [ "$char" == "%" ]; then
-	    char="%%"
-	elif [ "$char" == "\\" ]; then
-	    char="\\\\"
-	fi
-	word="$word""$char"
-    done < <(printf "%s" "$1")
-    #restore the IFS
-    IFS="$orig_IFS"
-
-    printf_proof_str="$word"
-    return 0
-}
-
 
 #binary searches into the config_array for corresponding softwares so as to install them
 #takes an argument to search for the software, returns 0 for success with the found index
@@ -365,8 +290,8 @@ restore_backup_main(){
 	fi
 
 	#safely expand file path
-	#./../bash_helper_scripts/safe_tilde_expansion.sh "$src_file_filename" 1
-	if result=$(/bash_helper_scripts/safe_tilde_expansion.sh\
+	#./..bash_helper_scripts/safe_tilde_expansion.sh "$src_file_filename" 1
+	if result=$(bash_helper_scripts/safe_tilde_expansion.sh\
 			"$src_file_name" 1); then
 	    #get the prefix, the expanded prefix and the expanded file path
 	    local str=
@@ -410,7 +335,7 @@ restore_backup_main(){
 	    elif [ "$tilde_expanded" -eq 0 ]; then
 		#we also try to remove direct references to values that would've been same as
 		#a tilde expansion from the given source file name
-		expanded_tilde_prefix="$(/bash_helper_scripts/safe_tilde_expansion.sh "~")"
+		expanded_tilde_prefix="$(bash_helper_scripts/safe_tilde_expansion.sh "~")"
 		#if the src_file_name is relative to /, then we get the rest of the path to make
 		#it relative to the backup dir
 		local allbutfirst="${src_file_name#?}"
@@ -443,7 +368,6 @@ restore_backup_main(){
 	
 	msg=$(printf "Backup file \"%s\" for %s not found." "$backup_file_name" "$soft")
 	log_msg -e --msg="$msg"
-	#update_config_array "$index" 6 0
 	create_log 0 0 "$index"
 	return 1
     fi
@@ -461,7 +385,6 @@ restore_backup_main(){
 	if [ $? -ne 0 ]; then
 	    msg="$(printf "Creating directory \"%s\" failed with error: %s" "$file_prefix" "$result")"
 	    log_msg -e --msg="$msg"
-	    #update_config_array "$index" 6 0
 	    create_log 0 0 "$index"
 	    return 1
 	fi
@@ -478,13 +401,11 @@ restore_backup_main(){
 	result=$(call_script "$soft" "$backup_file_name" "$src_file_name" 1 2>&1)
 	retVal=$?
 	if [ "$retVal" -eq 0 ]; then
-	    #update_config_array "$index" 6 1
 	    create_log 1 0 "$index"
 	    return 0
 	else
 	    msg="$(printf "Backup restore for %s failed with the following error: %s" "$soft" "$result")"
 	    log_msg -e --msg="$msg"
-	    #update_config_array "$index" 6 0
 	    create_log 0 0 "$index"
 	    return 1
 	fi
@@ -511,11 +432,9 @@ restore_backup_main(){
 	result="$(tr -d '\n' < <(echo "$result"))"
 	msg=$(printf "Copying failed with error: %s" "$result")
 	log_msg -e --msg="$msg"
-	#update_config_array "$index" 6 0
 	create_log 0 0 "$index"
 	return 1
     else
-	#update_config_array "$index" 6 1
 	create_log 1 0 "$index"
     fi
     return 0
@@ -645,8 +564,8 @@ create_backup(){
 	    fi
 	    
 	    #safely expand file path
-	    #../bash_helper_scripts/safe_tilde_expansion.sh "$raw_path" 1
-	    if result=$(/bash_helper_scripts/safe_tilde_expansion.sh\
+	    #..bash_helper_scripts/safe_tilde_expansion.sh "$raw_path" 1
+	    if result=$(bash_helper_scripts/safe_tilde_expansion.sh\
 			    "$raw_path" 1); then
 		#get the prefix, the expanded prefix and the expanded file path
 		local str=
@@ -680,7 +599,6 @@ create_backup(){
 		#\ || ! (cd -P "$unexpanded_file_prefix"); then
 		msg=$(printf "Source file %s for %s not found." "$parsed_file_path" "$soft")
 		log_msg --msg="$msg"
-		#update_config_array "$index" 6 0
 		create_log 0 0 "$index"
 		continue
 	    fi
@@ -711,7 +629,7 @@ create_backup(){
 		elif [ "$tilde_expanded" -eq 0 ]; then
 		    #we also try to remove direct references to values that would've been same as
 		    #a tilde expansion from the given source file name
-		    expanded_tilde_prefix="$(/bash_helper_scripts/safe_tilde_expansion.sh "~")"
+		    expanded_tilde_prefix="$(bash_helper_scripts/safe_tilde_expansion.sh "~")"
 		    #if the src_file_name is relative to /, then we get the rest of the path to make
 		    #it relative to the backup dir
 		    local allbutfirst="${src_file_name#?}"
@@ -741,7 +659,6 @@ create_backup(){
 	    if [ $? -ne 0 ]; then
 		msg="$(printf "Creating directory \"%s\" failed with error: %s" "$backup_dir" "$result")"
 		log_msg -e --msg="$msg"
-		#update_config_array "$index" 6 0
 		create_log 0 0 "$index"
 		continue
 	    fi
@@ -760,12 +677,10 @@ create_backup(){
 	    retVal=$?
 	    #printf "Retval is %s and restul is %s\n" "$retVal" "$result"
 	    if [ "$retVal" -eq 1 ]; then
-		#update_config_array "$index" 6 0
 		msg=$(printf "Creating backup for %s failed with the following error: \n%s" "$soft" "$result")
 		log_msg -e --msg="$msg"
 		create_log 0 0 "$index"
 	    else
-		#update_config_array "$index" 6 1
 		create_log 1 0 "$index"
 	    fi
 	else
@@ -777,10 +692,8 @@ create_backup(){
 	    if [ "$retVal" -ne 0 ]; then
 		msg=$(printf "Error copying \"%s\" to \"%s\"." "$src_file_name" "$backup_file_name")
 		log_msg -e --msg="$msg"
-		#update_config_array "$index" 6 0
 		create_log 0 0 "$index"
 	    else
-		#update_config_array "$index" 6 1
 		create_log 1 0 "$index"
 	    fi
 	fi
@@ -798,7 +711,6 @@ column2_value_cfilename=
 column3_value_cprops=
 column4_value_cconfig_filename=
 column5_value_clineno=
-column6_value_cstatus=
 
 #the length
 column1_value_max_len=0
@@ -814,7 +726,6 @@ get_configfile_column_values() {
     column3_value_cprops=
     column4_value_cconfig_filename=
     column5_value_clineno=
-    column6_value_cstatus=
     local column_count=1
     if [ -z "$1" ]; then
 	log_msg -e --msg="get_configfile_column_values(): Incorrect arguments received"
@@ -843,14 +754,12 @@ get_configfile_column_values() {
 		column4_value_cconfig_filename="$column"
 	    elif [ $column_count -eq 5 ]; then
 		column5_value_clineno="$column"
-	    elif [ $column_count -eq 6 ]; then
-		column6_value_cstatus="$column"
 	    fi
 	    ((column_count+=1))
 	    #printf "get_configfile_column_values(): Column_Count is %s and column is %s\n" "$column_count" "$column"
 	done
     done
-    if [ $column_count -ne 7 ]; then
+    if [ $column_count -ne 6 ]; then
 	msg=$(printf "get_configfile_column_values: Expected values for columns not received for %s." "$column1_value_name")
 	#printf "get_configfile_column_values(): Column_Count is %s and column is %s\n" "$column_count" "$column"
 	log_msg -e --msg="$msg"
@@ -948,14 +857,14 @@ get_installfile_column_values() {
     
     local column_count=1
     if [ -z "$1" ]; then
-	log_msg --msg="get_column_values(): Incorrect or invalid arguments received"
+	log_msg --msg="get_installfile_column_values(): Incorrect or invalid arguments received"
 	return 1
     fi
 
     column_count=1
     for column in $1; do
 	if [ -z "$column" ]; then
-	    msg=$(printf "get_column_values(): No value found for column %s\n" "$column_count")
+	    msg=$(printf "get_installfile_column_values(): No value found for column %s\n" "$column_count")
 	    log_msg -e --msg="$msg"
 	    return 1
 	fi
@@ -1024,7 +933,7 @@ print_ppa_soft_array() {
 	if [ "$ppa_comments" != "!" ]; then
 	    ppa_comments="MSG"
 	fi
-	if get_column_values "$array_content"; then
+	if get_installfile_column_values "$array_content"; then
 	    if [ $header -eq 0 ]; then
 		printf "%-*s %-*s %-*s %-*s %-*s %-*s %s\n" "$column1_length_max" "Name" "$column2_length_max" "ProgName" "$column3_length_max" "PPA" "$column4_length_max" "TOI" "$props_col_len" "Property" "$lineno_col_len" "$lineno_str" "Comments"
 		header=1
@@ -1041,7 +950,7 @@ column4_length_max=0
 
 #function to parse the installed-log file
 parse_install_file() {
-    if strict_read --field="\t,\s" --group='"' --line="\n" --comment="#" --esc < "$PPALIST_FILE"; then
+    if strict_read --field="\t,\s" --group='"' --line="\n" --comment="#" --esc < "$INSTALL_LOG_FILE"; then
 	while strict_get; do
 	    #if the line is not empty
 	    if [ -z "$strict_line" ]; then
@@ -1108,20 +1017,9 @@ parse_install_file() {
 		    esac		
 		done
 	    fi
-	    #printf "Msg: %s\n" "$msg"
-	    #printf "Comments: %s\n" "$comments"
-	    #add this line only if it is of the same type as the ones provided
-	    if get_column_values "$msg"; then
-		#export the TYPE_ARGS array
-		export TYPE_ARGS
-		#we check the condition in a sub-shell because
-		#otherwise it'd interfere with our strict_read
-		if (is_same_type "$column4_value_toi"); then
-		    ppa_soft_array[$ppa_soft_array_count]="$msg"
-		    ppa_soft_array_msg[$ppa_soft_array_count]="$comments"
-		    ((ppa_soft_array_count+=1))
-		fi
-	    fi
+	    ppa_soft_array[$ppa_soft_array_count]="$msg"
+	    ppa_soft_array_msg[$ppa_soft_array_count]="$comments"
+	    ((ppa_soft_array_count+=1))
 	done
     else
 	log_msg -e --msg="parse_file(): strict_read failed."
@@ -1180,7 +1078,7 @@ parse_config_file(){
 		    3) if [ "$column4_value_max_len" -lt "$curr_elem_len" ]; then
 			   column4_value_max_len="$curr_elem_len"
 		       fi
-		       msg+=$(printf "%s %s 0" "${strict_line[$index]}" "$strict_index");;
+		       msg+=$(printf "%s %s" "${strict_line[$index]}" "$strict_index");;
 		    *) log_msg -e --msg="parse_config_file(): Error parsing line. Quitting." --line="$strict_index"
 		       exit 1;;
 		esac
@@ -1221,9 +1119,9 @@ main() {
     fi
 
     #source in the strict_read file for use later
-    source "/bash_helper_scripts/strict_read.sh"
+    source "bash_helper_scripts/strict_read.sh"
     #source in bash_quoting_parsing
-    source "/bash_helper_scripts/bash_quoting_parsing.sh"
+    source "bash_helper_scripts/bash_quoting_parsing.sh"
     
     #parse the file(s)
     if [ "$ALL_FLG" -ne 1 ]; then
@@ -1252,15 +1150,6 @@ main() {
 	#printf "Restore requested\n"
 	printf "\n"
 	restore_backup
-    fi
-
-    #create log
-    if [ "$BACKUP_FLG" -eq 1 ] || [ "$RESTORE_FLG" -eq 1 ]; then
-	create_log 1 > "$SUCCESS_LOG_FILE"
-	local fail_log=$(create_log 0)
-	if [ -n "$fail_log" ]; then
-	    echo "$fail_log" > "$FAILED_LOG_FILE"
-	fi
     fi
 }
 
