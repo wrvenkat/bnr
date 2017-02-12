@@ -948,14 +948,14 @@ get_installfile_column_values() {
     
     local column_count=1
     if [ -z "$1" ]; then
-	log_msg --msg="get_column_values(): Incorrect or invalid arguments received"
+	log_msg --msg="get_installfile_column_values(): Incorrect or invalid arguments received"
 	return 1
     fi
 
     column_count=1
     for column in $1; do
 	if [ -z "$column" ]; then
-	    msg=$(printf "get_column_values(): No value found for column %s\n" "$column_count")
+	    msg=$(printf "get_installfile_column_values(): No value found for column %s\n" "$column_count")
 	    log_msg -e --msg="$msg"
 	    return 1
 	fi
@@ -1024,7 +1024,7 @@ print_ppa_soft_array() {
 	if [ "$ppa_comments" != "!" ]; then
 	    ppa_comments="MSG"
 	fi
-	if get_column_values "$array_content"; then
+	if get_install_file_column_values "$array_content"; then
 	    if [ $header -eq 0 ]; then
 		printf "%-*s %-*s %-*s %-*s %-*s %-*s %s\n" "$column1_length_max" "Name" "$column2_length_max" "ProgName" "$column3_length_max" "PPA" "$column4_length_max" "TOI" "$props_col_len" "Property" "$lineno_col_len" "$lineno_str" "Comments"
 		header=1
@@ -1041,7 +1041,7 @@ column4_length_max=0
 
 #function to parse the installed-log file
 parse_install_file() {
-    if strict_read --field="\t,\s" --group='"' --line="\n" --comment="#" --esc < "$PPALIST_FILE"; then
+    if strict_read --field="\t,\s" --group='"' --line="\n" --comment="#" --esc < "$INSTALL_LOG_FILE"; then
 	while strict_get; do
 	    #if the line is not empty
 	    if [ -z "$strict_line" ]; then
@@ -1111,7 +1111,7 @@ parse_install_file() {
 	    #printf "Msg: %s\n" "$msg"
 	    #printf "Comments: %s\n" "$comments"
 	    #add this line only if it is of the same type as the ones provided
-	    if get_column_values "$msg"; then
+	    if get_installfile_column_values "$msg"; then
 		#export the TYPE_ARGS array
 		export TYPE_ARGS
 		#we check the condition in a sub-shell because
@@ -1316,6 +1316,7 @@ parse_args(){
 	temp="${temp%\'}"
         install_log_file="$temp"
 	INSTALL_LOG_FILE="$install_log_file"
+	printf "Install log file is %s\n" "$INSTALL_LOG_FILE"
     fi
 
     if [ -n "$BACKUP_DIR" ]; then
