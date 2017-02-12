@@ -215,7 +215,7 @@ call_script(){
     src_file_name="$3"
 
     if ! [ -d "$BACKUP_SCRIPTS_DIR" ]; then
-	log_msg -e --msg="Backup scriptsdirectory not present."
+	log_msg -e --msg="Backup scripts directory not present."
 	return 1
     fi
 
