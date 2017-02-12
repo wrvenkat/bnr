@@ -1043,7 +1043,7 @@ parse_install_file() {
 parse_config_file(){
     #perform a strict read with tabs and spacesa as the field separators, new-line char as the EOL,
     #removing any comments beginning with the # character and group items within "
-    if strict_read --field="\t,\s" --line="\n" --comment="#" --group='"' --esc < <(cat "$CONFIG_FILE" | sort); then
+    if strict_read --field="\t,\s" --line="\n" --comment="#" --group='"' --esc < "$CONFIG_FILE"; then
 	while strict_get; do
 	    #if the line is not empty
 	    if [ -z "$strict_line" ]; then
