@@ -89,81 +89,6 @@ create_log() {
     fi
 }
 
-#this function updated the provided index in the config_array
-#accepts 3 arguments,
-#1 - the index into the array
-#2 - the column number
-#3 - the value to replace it with
-update_config_array(){
-    if [ -z "$1" ] || [ -z "$1" ] || [ -z "$1" ]; then
-	log_msg -e --msg="update_config_array(): Invalid number of arguments received."
-	return 1
-    fi
-
-    local index=
-    local column_no=
-    local value=
-    local msg=
-
-    index="$1"
-    column_no="$2"
-    value="$3"
-
-    if [ $column_no -eq 1 ]; then
-	column1_value_cname="$value"
-    elif [ $column_no -eq 2 ]; then
-	column2_value_cfilename="$value"	
-    elif [ $column_no -eq 3 ]; then
-	column3_value_cprops="$value"
-    elif [ $column_no -eq 4 ]; then
-	column4_value_cconfig_filename="$value"
-    elif [ $column_no -eq 5 ]; then
-	column5_value_clineno="$value"
-    elif [ $column_no -eq 6 ]; then
-	column6_value_cstatus="$value"
-    else
-	log_msg -e --msg="update_config_array(): Invalid column number received."
-	return 1
-    fi
-    
-    msg=$(printf "%s %s %s %s %s %s" "$column1_value_cname" "$column2_value_cfilename" "$column3_value_cprops" "$column4_value_cconfig_filename" "$column5_value_clineno" "$column6_value_cstatus")
-    #printf "MSG is %s for index %s\n" "$msg" "$index"
-    config_array["$index"]="$msg"
-
-    return 0
-}
-
-
-#Makes printf proof by replacing any % occurences with %%
-printf_proof_str=
-printf_proof(){
-    if [ -z "$1" ]; then
-	return 1;
-    fi
-
-    local char=
-    local word=
-    printf_proof_str=
-    #this is done to prevent read ignoring leading and trailing IFS characters
-    local orig_IFS="$IFS"
-    IFS=
-    #read raw input one character at a time
-    while read -r -N 1 char; do
-	if [ "$char" == "%" ]; then
-	    char="%%"
-	elif [ "$char" == "\\" ]; then
-	    char="\\\\"
-	fi
-	word="$word""$char"
-    done < <(printf "%s" "$1")
-    #restore the IFS
-    IFS="$orig_IFS"
-
-    printf_proof_str="$word"
-    return 0
-}
-
-
 #binary searches into the config_array for corresponding softwares so as to install them
 #takes an argument to search for the software, returns 0 for success with the found index
 #for the first occurence in global variable SEARCH_INDEX_1
@@ -443,7 +368,6 @@ restore_backup_main(){
 	
 	msg=$(printf "Backup file \"%s\" for %s not found." "$backup_file_name" "$soft")
 	log_msg -e --msg="$msg"
-	#update_config_array "$index" 6 0
 	create_log 0 0 "$index"
 	return 1
     fi
@@ -461,7 +385,6 @@ restore_backup_main(){
 	if [ $? -ne 0 ]; then
 	    msg="$(printf "Creating directory \"%s\" failed with error: %s" "$file_prefix" "$result")"
 	    log_msg -e --msg="$msg"
-	    #update_config_array "$index" 6 0
 	    create_log 0 0 "$index"
 	    return 1
 	fi
@@ -478,13 +401,11 @@ restore_backup_main(){
 	result=$(call_script "$soft" "$backup_file_name" "$src_file_name" 1 2>&1)
 	retVal=$?
 	if [ "$retVal" -eq 0 ]; then
-	    #update_config_array "$index" 6 1
 	    create_log 1 0 "$index"
 	    return 0
 	else
 	    msg="$(printf "Backup restore for %s failed with the following error: %s" "$soft" "$result")"
 	    log_msg -e --msg="$msg"
-	    #update_config_array "$index" 6 0
 	    create_log 0 0 "$index"
 	    return 1
 	fi
@@ -511,11 +432,9 @@ restore_backup_main(){
 	result="$(tr -d '\n' < <(echo "$result"))"
 	msg=$(printf "Copying failed with error: %s" "$result")
 	log_msg -e --msg="$msg"
-	#update_config_array "$index" 6 0
 	create_log 0 0 "$index"
 	return 1
     else
-	#update_config_array "$index" 6 1
 	create_log 1 0 "$index"
     fi
     return 0
@@ -680,7 +599,6 @@ create_backup(){
 		#\ || ! (cd -P "$unexpanded_file_prefix"); then
 		msg=$(printf "Source file %s for %s not found." "$parsed_file_path" "$soft")
 		log_msg --msg="$msg"
-		#update_config_array "$index" 6 0
 		create_log 0 0 "$index"
 		continue
 	    fi
@@ -741,7 +659,6 @@ create_backup(){
 	    if [ $? -ne 0 ]; then
 		msg="$(printf "Creating directory \"%s\" failed with error: %s" "$backup_dir" "$result")"
 		log_msg -e --msg="$msg"
-		#update_config_array "$index" 6 0
 		create_log 0 0 "$index"
 		continue
 	    fi
@@ -760,12 +677,10 @@ create_backup(){
 	    retVal=$?
 	    #printf "Retval is %s and restul is %s\n" "$retVal" "$result"
 	    if [ "$retVal" -eq 1 ]; then
-		#update_config_array "$index" 6 0
 		msg=$(printf "Creating backup for %s failed with the following error: \n%s" "$soft" "$result")
 		log_msg -e --msg="$msg"
 		create_log 0 0 "$index"
 	    else
-		#update_config_array "$index" 6 1
 		create_log 1 0 "$index"
 	    fi
 	else
@@ -777,10 +692,8 @@ create_backup(){
 	    if [ "$retVal" -ne 0 ]; then
 		msg=$(printf "Error copying \"%s\" to \"%s\"." "$src_file_name" "$backup_file_name")
 		log_msg -e --msg="$msg"
-		#update_config_array "$index" 6 0
 		create_log 0 0 "$index"
 	    else
-		#update_config_array "$index" 6 1
 		create_log 1 0 "$index"
 	    fi
 	fi
@@ -798,7 +711,6 @@ column2_value_cfilename=
 column3_value_cprops=
 column4_value_cconfig_filename=
 column5_value_clineno=
-column6_value_cstatus=
 
 #the length
 column1_value_max_len=0
@@ -814,7 +726,6 @@ get_configfile_column_values() {
     column3_value_cprops=
     column4_value_cconfig_filename=
     column5_value_clineno=
-    column6_value_cstatus=
     local column_count=1
     if [ -z "$1" ]; then
 	log_msg -e --msg="get_configfile_column_values(): Incorrect arguments received"
@@ -843,14 +754,12 @@ get_configfile_column_values() {
 		column4_value_cconfig_filename="$column"
 	    elif [ $column_count -eq 5 ]; then
 		column5_value_clineno="$column"
-	    elif [ $column_count -eq 6 ]; then
-		column6_value_cstatus="$column"
 	    fi
 	    ((column_count+=1))
 	    #printf "get_configfile_column_values(): Column_Count is %s and column is %s\n" "$column_count" "$column"
 	done
     done
-    if [ $column_count -ne 7 ]; then
+    if [ $column_count -ne 6 ]; then
 	msg=$(printf "get_configfile_column_values: Expected values for columns not received for %s." "$column1_value_name")
 	#printf "get_configfile_column_values(): Column_Count is %s and column is %s\n" "$column_count" "$column"
 	log_msg -e --msg="$msg"
@@ -1169,7 +1078,7 @@ parse_config_file(){
 		    3) if [ "$column4_value_max_len" -lt "$curr_elem_len" ]; then
 			   column4_value_max_len="$curr_elem_len"
 		       fi
-		       msg+=$(printf "%s %s 0" "${strict_line[$index]}" "$strict_index");;
+		       msg+=$(printf "%s %s" "${strict_line[$index]}" "$strict_index");;
 		    *) log_msg -e --msg="parse_config_file(): Error parsing line. Quitting." --line="$strict_index"
 		       exit 1;;
 		esac
