@@ -968,6 +968,7 @@ sort_config_array(){
 	for word in $sorted_line; do
 	    if [ "$index2" -eq 2 ]; then
 		actual_index="$word"
+		printf "Target index is %s and actual Index is %s\n" "$index1" "$actual_index"
 		config_array[$index1]="${local_config_array[$actual_index]}"
 		((index1+=1))
 	    fi
