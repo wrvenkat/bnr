@@ -943,6 +943,10 @@ sort_config_array(){
 	local_config_array="${config_array[$index]}"
     done
 
+    for index in "${!local_config_array[@]}"; do
+	printf "Copy entry at %s is %s\n" "$index" "${local_config_array[$index]}"
+    done
+
     #create an array where each entry is the first column
     #and the index of it in config_array
     local msg=
@@ -952,9 +956,7 @@ sort_config_array(){
 	    break
 	done
 	msg+="$(printf "%s %s" "$word" "$index")"$'\n'
-	#printf "Msg1 is:%s-" "$msg"
     done
-    #printf "Msg is %s\n" "$msg"
 
     #sort this array and update config_array based
     #on the order in which it appears
