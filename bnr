@@ -1060,14 +1060,6 @@ parse_config_file(){
 	    fi
 	    local msg=
 	    local index=0
-	    #count the number of words we obtained
-	    for index in "${!strict_line[@]}"; do
-		#printf "Word %s is %s\n" "$index" "${strict_line[$index]}"
-		:
-	    done
-	    #printf "Line is %s and index is %s\n" "${strict_line[*]}" "$index"	    
-	    #printf "MSG: Unparsed line is %s\n" "$strict_unparsed_line"
-
 	    #we're supposed to get exactly 4 columns/words
 	    for index in "${!strict_line[@]}"; do
 		local val="${strict_line[$index]}"
