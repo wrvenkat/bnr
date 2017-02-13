@@ -76,7 +76,7 @@ create_log() {
     
     array_content="${config_array[$index]}"
     if get_configfile_column_values "$array_content"; then
-	msg="$(printf "%-*s %-*s %-*s %-*s" "$column1_value_max_len" "$column1_value_cname" "$column2_value_max_len" "$column2_value_cfilename" "$column3_value_max_len" "$column3_value_cprops" "$column4_value_max_len" "$column4_value_cconfig_filename")"
+	msg="$(printf "%-*s %-*s %-*s %s" "$column1_value_max_len" "$column1_value_cname" "$column2_value_max_len" "$column2_value_cfilename" "$column3_value_max_len" "$column3_value_cprops" "$column4_value_cconfig_filename")"
 	if [ "$console" -eq 1 ]; then
 	    printf "%s\n" "$msg"
 	else
