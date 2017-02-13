@@ -961,7 +961,6 @@ sort_config_array(){
     local index2=
     local actual_index=
     while read sorted_line; do
-	printf "Sorted line is %s\n" "$sorted_line"
 	if [ -n "$sorted_line" ]; then
 	    index2=1
 	    for word in $sorted_line; do
@@ -1109,6 +1108,7 @@ parse_config_file(){
     print_config_array
     sort_config_array    
     print_config_array
+    exit 1
 }
 
 main() {
