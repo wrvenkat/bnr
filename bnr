@@ -943,10 +943,6 @@ sort_config_array(){
 	local_config_array[$index]="${config_array[$index]}"
     done
 
-    for index in "${!local_config_array[@]}"; do
-	printf "Copy entry at %s is %s\n" "$index" "${local_config_array[$index]}"
-    done
-
     #create an array where each entry is the first column
     #and the index of it in config_array
     local msg=
@@ -971,18 +967,15 @@ sort_config_array(){
 	    for word in $sorted_line; do
 		if [ "$index2" -eq 2 ]; then
 		    actual_index="$word"
-		    printf "Target index is %s and actual Index is %s\n" "$index1" "$actual_index"
-		    #config_array[$index1]="${local_config_array[$actual_index]}"
-		    printf "NewEntry is %s\n" "${local_config_array[$actual_index]}"
+		    #printf "Target index is %s and actual Index is %s\n" "$index1" "$actual_index"
+		    config_array[$index1]="${local_config_array[$actual_index]}"
+		    #printf "NewEntry is %s\n" "${local_config_array[$actual_index]}"
 		    ((index1+=1))
 		fi
 		((index2+=1))
 	    done
 	fi
     done < <(echo "$msg" | sort)
-
-    #print_config_array
-    exit 1
 }
 
 column1_length_max=0
@@ -1114,7 +1107,8 @@ parse_config_file(){
 	exit 1
     fi
     print_config_array
-    sort_config_array
+    sort_config_array    
+    print_config_array
 }
 
 main() {
