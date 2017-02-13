@@ -949,9 +949,14 @@ sort_config_array(){
     local word=
     for index in "${!config_array[@]}"; do
 	for word in ${config_array[$index]}; do
+	    if bash_quoting_parse "$word"; then
+		word="$quoting_parsed_string"
+	    fi
 	    break
 	done
-	msg+="$(printf "%s %s" "$word" "$index")"$'\n'
+	if [ -n "$word" ]; then
+	    msg+="$(printf "%s %s" "$word" "$index")"$'\n'
+	fi
     done
 
     #sort this array and update config_array based
