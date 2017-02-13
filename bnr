@@ -1106,7 +1106,8 @@ parse_config_file(){
 	exit 1
     fi
     print_config_array
-    sort_config_array    
+    sort_config_array
+    printf "\n"
     print_config_array
     exit 1
 }
