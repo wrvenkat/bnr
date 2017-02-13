@@ -940,7 +940,7 @@ sort_config_array(){
     declare -a local_config_array
     #create a local copy of the config array
     for index in ${!config_array[@]}; do
-	local_config_array="${config_array[$index]}"
+	local_config_array[$index]="${config_array[$index]}"
     done
 
     for index in "${!local_config_array[@]}"; do
