@@ -948,7 +948,7 @@ sort_config_array(){
     local msg=
     local word=
     for index in "${!config_array[@]}"; do
-	if get_configfile_column_values "${config_array[$index]}"; do
+	if get_configfile_column_values "${config_array[$index]}"; then
 	    if bash_quoting_parse "$column1_value_cname"; then
 		word="$quoting_parsed_string"
 	    fi
