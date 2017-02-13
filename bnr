@@ -76,7 +76,7 @@ create_log() {
     
     array_content="${config_array[$index]}"
     if get_configfile_column_values "$array_content"; then
-	msg="$(printf "%-*s %-*s %-*s %-*s" "$column1_value_max_len" "$column1_value_cname" "$column2_value_max_len" "$column2_value_cfilename" "$column3_value_max_len" "$column3_value_cprops" "$column4_value_max_len" "$column4_value_cconfig_filename")"
+	msg="$(printf "%-*s %-*s %-*s %s" "$column1_value_max_len" "$column1_value_cname" "$column2_value_max_len" "$column2_value_cfilename" "$column3_value_max_len" "$column3_value_cprops" "$column4_value_cconfig_filename")"
 	if [ "$console" -eq 1 ]; then
 	    printf "%s\n" "$msg"
 	else
@@ -934,6 +934,54 @@ print_ppa_soft_array() {
     done
 }
 
+#sorts the config array based on the first column value
+sort_config_array(){
+    local index=0
+    declare -a local_config_array
+    #create a local copy of the config array
+    for index in ${!config_array[@]}; do
+	local_config_array[$index]="${config_array[$index]}"
+    done
+
+    #create an array where each entry is the first column
+    #and the index of it in config_array
+    local msg=
+    local word=
+    for index in "${!config_array[@]}"; do
+	if get_configfile_column_values "${config_array[$index]}"; then
+	    if bash_quoting_parse "$column1_value_cname"; then
+		word="$quoting_parsed_string"
+		#printf "Word is %s\n" "$word"
+	    fi
+	    if [ -n "$word" ]; then
+		msg+="$(printf "%s %s" "$word" "$index")"$'\n'
+	    fi
+	fi
+    done
+
+    #sort this array and update config_array based
+    #on the order in which it appears
+    local sorted_line
+    local index1=0
+    local index2=
+    local actual_index=
+    while read sorted_line; do
+	if [ -n "$sorted_line" ]; then
+	    index2=1
+	    for word in $sorted_line; do
+		if [ "$index2" -eq 2 ]; then
+		    actual_index="$word"
+		    #printf "Target index is %s and actual Index is %s\n" "$index1" "$actual_index"
+		    config_array[$index1]="${local_config_array[$actual_index]}"
+		    #printf "NewEntry is %s\n" "${local_config_array[$actual_index]}"
+		    ((index1+=1))
+		fi
+		((index2+=1))
+	    done
+	fi
+    done < <(echo "$msg" | sort)
+}
+
 column1_length_max=0
 column2_length_max=0
 column3_length_max=0
@@ -1004,7 +1052,7 @@ parse_install_file() {
 parse_config_file(){
     #perform a strict read with tabs and spacesa as the field separators, new-line char as the EOL,
     #removing any comments beginning with the # character and group items within "
-    if strict_read --field="\t,\s" --line="\n" --comment="#" --group='"' --esc < <(cat "$CONFIG_FILE" | sort); then
+    if strict_read --field="\t,\s" --line="\n" --comment="#" --group='"' --esc < "$CONFIG_FILE"; then
 	while strict_get; do
 	    #if the line is not empty
 	    if [ -z "$strict_line" ]; then
@@ -1012,14 +1060,6 @@ parse_config_file(){
 	    fi
 	    local msg=
 	    local index=0
-	    #count the number of words we obtained
-	    for index in "${!strict_line[@]}"; do
-		#printf "Word %s is %s\n" "$index" "${strict_line[$index]}"
-		:
-	    done
-	    #printf "Line is %s and index is %s\n" "${strict_line[*]}" "$index"	    
-	    #printf "MSG: Unparsed line is %s\n" "$strict_unparsed_line"
-
 	    #we're supposed to get exactly 4 columns/words
 	    for index in "${!strict_line[@]}"; do
 		local val="${strict_line[$index]}"
@@ -1062,6 +1102,7 @@ parse_config_file(){
 	log_msg -e --msg="parse_config_file(): strict_read failed"
 	exit 1
     fi
+    sort_config_array
 }
 
 main() {
