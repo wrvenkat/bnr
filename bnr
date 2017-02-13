@@ -952,10 +952,9 @@ sort_config_array(){
 	    if bash_quoting_parse "$column1_value_cname"; then
 		word="$quoting_parsed_string"
 	    fi
-	    break
-	done
-	if [ -n "$word" ]; then
-	    msg+="$(printf "%s %s" "$word" "$index")"$'\n'
+	    if [ -n "$word" ]; then
+		msg+="$(printf "%s %s" "$word" "$index")"$'\n'
+	    fi
 	fi
     done
 
