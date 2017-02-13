@@ -1102,11 +1102,7 @@ parse_config_file(){
 	log_msg -e --msg="parse_config_file(): strict_read failed"
 	exit 1
     fi
-    print_config_array
     sort_config_array
-    printf "\n"
-    print_config_array
-    exit 1
 }
 
 main() {
