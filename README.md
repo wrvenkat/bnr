@@ -40,28 +40,32 @@ Please see [bnr-conf](https://github.com/wrvenkat/bnr-conf) for more information
 #### Example ####
 
   1. Get a stable copy of the project:  
-  `git clone --recursive https://github.com/wrvenkat/bnr.git && git checkout stable`
-  2. Navigate to bnr-conf directory and get the config file for your Ubuntu version:  
-  `cd ibnr-conf; git checkout <your_ubuntu_version>`  
-  Example: `cd ibnr-conf; git checkout 16.04`
-  3. Navigate to config_scripts directory and get the config scripts for your Ubuntu version:  
-  `cd config_scripts; git checkout <your_ubuntu_version>`  
-  Example: `cd config_scripts; git checkout 16.04`
-  4. Navigate back to the project dir and run the tool to list the config file, add the PPAs and install the software:  
-  To restore backup for all entries,  
-  `cd ..; ./bnr --list --all --restore`  
-  To restore backup for entries in a ibnr-conf type file,  
-  `cd ..; ./bnr --list --restore --installlog=../successfull_ppa_list.conf`  
-  To restore backup from the provided directory instead of the default one,  
-  `cd ..; ./bnr --list --restore --backupdir=~/dotfiles/`  
-  To create a backup mirroring the dotfiles' source path inside the default config files directory,  
-  `./bnr --list --backup --mirror`  
-  To create a backup inside the provided config files directory,  
-  `./bnr --list --backup --backupdir=~/dotfiles/`  
-
+  `git clone https://github.com/wrvenkat/bnr.git`  
+  2. Get a stable copy of the config file or you can use your own version:  
+  `git clone https://github.com/wrvenkat/bnr-conf.git`  
+  3. Get a stable copy of the config_scripts for your Ubuntu version:  
+  `git clone https://github.com/wrvenkat/config_scripts.git && git checkout <your-ubuntu-version>`  
+   Example: `git clone https://github.com/wrvenkat/config_scripts.git && git checkout 16.04`  
+  4. Get the stable version of [bash helper scripts](https://github.com/wrvenkat/bash_helper_scripts.git):  
+  `git clone https://github.com/wrvenkat/bash_helper_scripts.git`  
+  5. Run the tool,
+	 1. To restore backup for all entries,  
+	 `./bnr --list --all --restore`  
+	 2. To restore backup for entries in a ibnr-conf type file,  
+	 `./bnr --list --restore --installlog=successfull_ppa_list.conf`  
+	 3. To restore backup from the provided directory instead of the default one,  
+	 `./bnr --all --list --restore --backupdir=~/dotfiles\ backup/`  
+	 4. To restore a mirrored backup from the provided directory,  
+	 `./bnr --all --list --restore --mirror --backupdir=~/dotfiles\ backup/`  
+	 5. To create a backup mirroring the dotfiles' source path inside the default backup directory,  
+	 `./bnr --all --list --backup --mirror`  
+	 6. To create a backup inside the provided backup directory,  
+	 `./bnr --list --backup --backupdir=~/dotfiles/`  
+	 
 ## Contributing
 
-Contributions are welcome. Please see the README.md for the submodules for information on contributing.
+Any type of contribution is welcome! :) The master branch holds the latest stable. The dev branch holds the latest unstable code. The test branch is a submodule to the dev branch and holds the test scripts.  
+For contribution regarding bnr-conf and config_
 
 ## LICENSE
 
