@@ -65,7 +65,7 @@ Please see [bnr-conf](https://github.com/wrvenkat/bnr-conf) for more information
 ## Contributing
 
 Any type of contribution is welcome! :) The master branch holds the latest stable. The dev branch holds the latest unstable code. The test branch is a submodule to the dev branch and holds the test scripts.  
-For contribution regarding bnr-conf and config_scripts, please see [bnr-conf](https://github.com/wrvenkat/bnr-conf.git) and [config_scrtips](https://github.com/wrvenkat/config_scripts.git).
+For contributions to bnr-conf and config_scripts, please see [bnr-conf](https://github.com/wrvenkat/bnr-conf.git) and [config_scrtips](https://github.com/wrvenkat/config_scripts.git).
 
 ## LICENSE
 
