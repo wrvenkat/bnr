@@ -38,14 +38,14 @@ Please see [bnr-conf](https://github.com/wrvenkat/bnr-conf) for more information
 `--mirror`&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`- when specified during a backup, mirrors the directory structure of the source dotfile.`
 
 #### Example ####
-
+You can get the [bootstrap] (link) script that does the following.  
   1. Get a stable copy of the project and move to the folder:  
-  `git clone https://github.com/wrvenkat/bnr.git`  
+  `git clone https://github.com/wrvenkat/bnr.git && cd bnr`  
   2. Get a stable copy of the config file or you can use your own version:  
   `git clone https://github.com/wrvenkat/bnr-conf.git`  
   3. Get a stable copy of the config_scripts for your Ubuntu version:  
-  `git clone https://github.com/wrvenkat/config_scripts.git && git checkout <your-ubuntu-version>`  
-   Example: `git clone https://github.com/wrvenkat/config_scripts.git && git checkout 16.04`  
+  `git clone https://github.com/wrvenkat/config_scripts.git && cd config_scripts && git checkout <your-ubuntu-version> && cd ..`  
+   Example: `git clone https://github.com/wrvenkat/config_scripts.git && cd config_scripts && git checkout 16.04`  
   4. Get the stable version of [bash helper scripts](https://github.com/wrvenkat/bash_helper_scripts.git):  
   `git clone https://github.com/wrvenkat/bash_helper_scripts.git`  
   5. Run the tool,
