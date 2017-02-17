@@ -38,7 +38,7 @@ Please see [bnr-conf](https://github.com/wrvenkat/bnr-conf) for more information
 `--mirror`&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`- when specified during a backup, mirrors the directory structure of the source dotfile.`
 
 #### Example ####
-You can get the [bootstrap] (link) script that does the following.  
+You can get the [bootstrap] (https://raw.githubusercontent.com/wrvenkat/bnr/master/bnr-bootstrap.sh) script that does the following.  
   1. Get a stable copy of the project and move to the folder:  
   `git clone https://github.com/wrvenkat/bnr.git && cd bnr`  
   2. Get a stable copy of the config file or you can use your own version:  
