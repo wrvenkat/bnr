@@ -39,7 +39,7 @@ Please see [bnr-conf](https://github.com/wrvenkat/bnr-conf) for more information
 
 #### Example ####
 
-  1. Get a stable copy of the project:  
+  1. Get a stable copy of the project and move to the folder:  
   `git clone https://github.com/wrvenkat/bnr.git`  
   2. Get a stable copy of the config file or you can use your own version:  
   `git clone https://github.com/wrvenkat/bnr-conf.git`  
