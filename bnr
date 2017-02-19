@@ -223,7 +223,7 @@ call_script(){
     script_path=$(printf "%s-bnr.sh" "$soft")
     script_path="$(cd "$BACKUP_SCRIPTS_DIR"; echo "$(pwd)/$script_path")"
     if ! [ -a "$script_path" ]; then
-	msg=$(printf "No backup/restore script found for %s." "$soft")
+	msg=$(printf "No backup/restore script \"%s\" found for %s." "$script_path" "$soft")
 	log_msg -e --msg="$msg"
 	return 1
     fi
