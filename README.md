@@ -61,7 +61,10 @@ You can get the [bootstrap] (https://raw.githubusercontent.com/wrvenkat/bnr/mast
 	 `./bnr --all --list --backup --mirror`  
 	 6. To create a backup inside the provided backup directory,  
 	 `./bnr --list --backup --backupdir=~/dotfiles/`  
-	 
+
+## Limitations ##
+	Although the script is capable of performing a safe tilde-expansion, it lacks support for filename expansion. This is a major limitation as it would greatly help expand the utility and scope of this script. This may be considered for future releases.
+
 ## Contributing
 
 Any type of contribution is welcome! :) The master branch holds the latest stable. The dev branch holds the latest unstable code. The test branch is a submodule to the dev branch and holds the test scripts.  
