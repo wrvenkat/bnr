@@ -597,7 +597,7 @@ create_backup(){
 				)"; then
 		#\ || ! (cd -P "$unexpanded_file_prefix"); then
 		msg=$(printf "Source file %s for %s not found." "$parsed_file_path" "$soft")
-		log_msg --msg="$msg"
+		log_msg -e --msg="$msg"
 		create_log 0 0 "$index"
 		continue
 	    fi
