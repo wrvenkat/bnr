@@ -63,7 +63,8 @@ You can get the [bootstrap] (https://raw.githubusercontent.com/wrvenkat/bnr/mast
 	 `./bnr --list --backup --backupdir=~/dotfiles/`  
 
 ## Limitations ##
-	Although the script is capable of performing a safe tilde-expansion, it lacks support for filename expansion. This is a major limitation as it would greatly help expand the utility and scope of this script. This may be considered for future releases.
+
+Although the script is capable of performing a safe tilde-expansion, it lacks support for filename expansion. This is a major limitation as it would greatly help expand the utility and scope of this script. This may be considered for future releases.
 
 ## Contributing
 
